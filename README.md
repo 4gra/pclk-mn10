@@ -3,4 +3,4 @@
 
 This project doesn't really exist right now.
 
-At the moment please see the [https://github.com/4gra/pclk-mn10/wiki](wiki)
+At the moment please see the [wiki](https://github.com/4gra/pclk-mn10/wiki)
