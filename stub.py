@@ -17,6 +17,7 @@
 # Requires PyUSB, etc.
 import usb.core
 import usb.util
+import time
 
 # Do the device setup.
 dev = usb.core.find(idVendor=0x054C,idProduct=0x0034)
@@ -32,44 +33,22 @@ rep = usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN)) 
 # print ("Found %s." % [ep, rep])
 
 
-def fuzzctl(bRequest):
-    """
-    logs an attempt of a control transfer of a given request
-    no need for this - Windows driver outputs just do what pyUSB
-    would have done.
-    >>> for bRequest in range(255):
-    >>>   fuzzctl(bRequest)
-    
-    We _were_ going to attempt to figure out control commands but that was unneeded.
-
-    The windows driver (and this library) send something (very close to):
-    # SETUP PACKET:
-    #    80 06 00 01 00 00 12 00
-
-    >>> dev.ctrl_transfer(0x80, 0x06, 0x0100, 0, 0x12)
-    array('B', [18, 1, 16, 1, 255, 0, 0, 64, 76, 5, 52, 0, 0, 1, 1, 2, 0, 1])
-
-    # SETUP PACKET:
-    #   80 06 00 02 00 00 09 02
-
-    >>> dev.ctrl_transfer(0x80, 0x06, 0x0002, 0, 0x0902)
-    array('B', [9, 2, 32, 0, 1, 1, 2, 128, 50, 9, 4, 0, 0, 2, 0, 0, 0, 0, 7, 5, 1, 2, 64, 0, 0, 7, 5, 130, 2, 64, 0, 0])
-    """
-    try:
-        print ("bRequest %s" % bRequest)
-        # ctrl_transfer( bmRequestType, bmRequest, wValue, wIndex, nBytes)
-        # vendor read:
-        # ret = dev.ctrl_transfer(0xC0, bRequest, 0, 0, 1)
-        ret = dev.ctrl_transfer(0xC0, bRequest, 0, 0, 1)
-        print (" > %s" % ret)
-    except:
-        # failed to get data for this request
-        print (" - nope")
-        pass
-
-
 """
-# Well, well:
+We _were_ going to attempt to figure out control commands but that was unneeded.
+
+The windows driver (and this library) send something (very close to):
+# SETUP PACKET:
+#    80 06 00 01 00 00 12 00
+
+>>> dev.ctrl_transfer(0x80, 0x06, 0x0100, 0, 0x12)
+array('B', [18, 1, 16, 1, 255, 0, 0, 64, 76, 5, 52, 0, 0, 1, 1, 2, 0, 1])
+
+# SETUP PACKET:
+#   80 06 00 02 00 00 09 02
+
+>>> dev.ctrl_transfer(0x80, 0x06, 0x0002, 0, 0x0902)
+array('B', [9, 2, 32, 0, 1, 1, 2, 128, 50, 9, 4, 0, 0, 2, 0, 0, 0, 0, 7, 5, 1, 2, 64, 0, 0, 7, 5, 130, 2, 64, 0, 0])
+
 # Finally a write/read seemed to do something -- just the once...
 >>> ep.write([0x00,0x60,0x00])
 3
@@ -83,30 +62,46 @@ array('B')
 # determined that this was indeed the poweron command.
 """
 
+def xprint(dat, pre=""):
+    print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
+
+def jsend(dat):
+    """just send. and print."""
+    xprint(dat, ">> ")
+    ep.write(dat)
+
+def jread(ll, delay=None):
+    if delay:
+        time.sleep(delay)
+    out = rep.read(ll)
+    while out:
+        xprint(out, " < ")
+        out = rep.read(ll)
+    stdout.flush()
+
 def send(dat):
     """sends data and reads a max. of 40 bytes back."""
-    ep.write(dat)
-    print(rep.read(40))
-
+    jread(32)
+    jsend(dat)
 
 if __name__ == '__main__':
-    from sys import argv
+    from sys import argv, stdout
 
-    if "off" in argv[1:]:
+    if argv[0][-3:] == 'off' or "off" in argv[1:]:
         print("Off...")
-        send([0x04,0x00,0x60,0xc0,0x2f])  # ASCII 4F := 'O'
-        send([0x04,0x00,0x60,0x90,0x26])  # ASCII 46 := 'F' 
-        send([0x04,0x00,0x60,0xb0,0x26])  # ASCII 46 := 'F' 
-        #send([0x00,0x60,0x02])
-    elif "thing" in argv[1:]:
-        print("something???")
-        send([0x04,0x00,0x60,0xb0,0x0f])
-        send([0x04,0x00,0x60,0xc1,0x22])
-        send([0x04,0x00,0x60,0xc1,0x0f])
-        send([0x04,0x00,0x60,0xc1,0xdd])
-    elif "on" in argv[1:]:
+        jread(32)
+        jsend([0x04,0x00,0x60,0xc0,0x2f])  # ASCII 4F := 'O'
+        jsend([0x04,0x00,0x60,0xb0,0x26])  # ASCII 46 := 'F' 
+        #send([0x04,0x00,0x60,0x90,0x26])  # ASCII 46 := 'F' 
+        jread(32, 0.2)
+    elif argv[0][-2:] == 'on' or "on" in argv[1:]:
         print("On...")
         send([0x00,0x60,0x00])
+        jread(32, 0.5)
+    elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
+        while True:
+            jread(32)
+
     else:
         print("Usage: stub.py [on|off|thing}")
 
