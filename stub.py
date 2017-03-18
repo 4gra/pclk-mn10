@@ -18,9 +18,16 @@
 import usb.core
 import usb.util
 import time
+import sys
 
+# command list
+commandlist="commands.json"
 # Do the device setup.
 dev = usb.core.find(idVendor=0x054C,idProduct=0x0034)
+if not dev:
+    print("Cannot find PCLK-MN10 device; exiting.",file=sys.stderr)
+    sys.exit(1)
+
 dev.set_configuration()
 cfg = dev.get_active_configuration()
 # print(cfg)
@@ -65,6 +72,11 @@ array('B')
 def xprint(dat, pre=""):
     print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
 
+def hexin(instr):
+    """converts a string or list of strings into commands"""
+    for cmd in instr.split(","):
+        yield [int(x, 16) for x in cmd.split(" ") if x]
+
 def jsend(dat):
     """just send. and print."""
     xprint(dat, ">> ")
@@ -84,6 +96,19 @@ def send(dat):
     jread(32)
     jsend(dat)
 
+commands = {
+}
+def read_commands():
+    try:
+        import json
+        commands.update(
+            json.load(open(commandlist))
+        )
+    except:
+        print("Cannot read extra commands, continuing anyway.",file=sys.stderr)
+    finally:
+        return commands
+
 if __name__ == '__main__':
     from sys import argv, stdout
 
@@ -91,21 +116,31 @@ if __name__ == '__main__':
         print("Off...")
         jread(32)
         jsend([0x04,0x00,0x60,0xc0,0x2f])  # ASCII 4F := 'O'
-        jsend([0x04,0x00,0x60,0xb0,0x26])  # ASCII 46 := 'F' 
+        #jsend([0x04,0x00,0x60,0xb0,0x26])  # ASCII 46 := 'F' 
         #send([0x04,0x00,0x60,0x90,0x26])  # ASCII 46 := 'F' 
         jread(32, 0.2)
-    elif "read" in argv[1:]:
-        jread(32)
-    elif "send" in argv[1:]:
-        send([int(x, 16) for x in argv[2].split(" ")])
     elif argv[0][-2:] == 'on' or "on" in argv[1:]:
         print("On...")
         send([0x00,0x60,0x00])
         jread(32, 0.5)
+
+    elif "read" in argv[1:]:
+        jread(32)
+    elif "send" in argv[1:] and len(argv) > 2:
+        for x in hexin(argv[2]):
+            send(x)
+            jread(32, 0.2)
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
         while True:
             jread(32)
 
+    # TODO: precompile this list once we are no longer
+    # adding to it continually!
+    elif len(argv) > 1 and argv[1] in read_commands():
+        for x in hexin(commands[argv[1]]):
+            send(x)
+            jread(32, 0.2)
+            jread(32, 0.2)
     else:
-        print("Usage: stub.py [on|off|thing}")
+        print("Usage: %s [on|off|send|read|poll}" % sys.argv[0])
 
