@@ -1,8 +1,14 @@
 # pclk-mn10
-(Attempting to) control the PCLK-MN10 USB device
+(Attempting to) control the PCLK-MN10 USB device from Mac / Linux (and maybe modern Windows too).
 
 This project doesn't contain much info, but it _can_ turn a hi-fi, connected appropriately to the device, on and off.
 I intend to map as many functions of the link as is useful to me (and others, if they care to help) until I get bored.
 I do not intend for this to become well-written software at any stage(!)
+
+Requirements:
+ - Python 3.x (tested on 3.5)
+ - PyUSB >= 2.x 
+ - libusb >= 1.0.recent
+ - An OS with USB support that run all of the above.
 
 At the moment please see the [wiki](https://github.com/4gra/pclk-mn10/wiki) for more details / work in progress.
