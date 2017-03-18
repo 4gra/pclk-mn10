@@ -10,5 +10,9 @@ Requirements:
  - PyUSB >= 2.x 
  - libusb >= 1.0.recent
  - An OS with USB support that run all of the above.
+ 
+Additional requirements, if you want the software to actually do anything:
+ - A PCLK-MN10, PCLK-MN10a or PCLK-MN20.  Possibly also known as a CAV-MN10.
+ - A Sony hifi device compatible with the above such as the DHC-MD595.
 
-At the moment please see the [wiki](https://github.com/4gra/pclk-mn10/wiki) for more details / work in progress.
+As this project is more of a journey of understanding than a product of any sort, please see the [wiki](https://github.com/4gra/pclk-mn10/wiki) for more details / work in progress.
