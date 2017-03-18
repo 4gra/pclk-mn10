@@ -99,15 +99,15 @@ def send(dat):
 commands = {
 }
 def read_commands():
-    try:
-        import json
-        commands.update(
-            json.load(open(commandlist))
-        )
-    except:
-        print("Cannot read extra commands, continuing anyway.",file=sys.stderr)
-    finally:
-        return commands
+    if not commands:
+        try:
+            import json
+            commands.update(
+                json.load(open(commandlist))
+            )
+        except:
+            print("Cannot read extra commands, continuing anyway.",file=sys.stderr)
+    return commands
 
 if __name__ == '__main__':
     from sys import argv, stdout
@@ -119,21 +119,20 @@ if __name__ == '__main__':
         #jsend([0x04,0x00,0x60,0xb0,0x26])  # ASCII 46 := 'F' 
         #send([0x04,0x00,0x60,0x90,0x26])  # ASCII 46 := 'F' 
         jread(32, 0.2)
+    elif "read" in argv[1:]:
+        jread(32)
+    elif "send" in argv[1:] and len(argv) > 2:
+        for arg in argv[2:]:
+            for x in hexin(arg):
+                send(x)
+                jread(32, 0.2)
     elif argv[0][-2:] == 'on' or "on" in argv[1:]:
         print("On...")
         send([0x00,0x60,0x00])
         jread(32, 0.5)
-
-    elif "read" in argv[1:]:
-        jread(32)
-    elif "send" in argv[1:] and len(argv) > 2:
-        for x in hexin(argv[2]):
-            send(x)
-            jread(32, 0.2)
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
         while True:
             jread(32)
-
     # TODO: precompile this list once we are no longer
     # adding to it continually!
     elif len(argv) > 1 and argv[1] in read_commands():
@@ -142,5 +141,13 @@ if __name__ == '__main__':
             jread(32, 0.2)
             jread(32, 0.2)
     else:
-        print("Usage: %s [on|off|send|read|poll}" % sys.argv[0])
+        print("""\
+Usage: stub.py <command>
+Where <command> is one of:
+  send 'XX XX XX' ['XX XX XX' [...]]
+  read [bytes]
+  poll
+Or one of the named commands:
+%s
+""" % "\n".join(["  %s" % x for x in read_commands().keys()]))
 
