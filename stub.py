@@ -94,6 +94,10 @@ if __name__ == '__main__':
         jsend([0x04,0x00,0x60,0xb0,0x26])  # ASCII 46 := 'F' 
         #send([0x04,0x00,0x60,0x90,0x26])  # ASCII 46 := 'F' 
         jread(32, 0.2)
+    elif "read" in argv[1:]:
+        jread(32)
+    elif "send" in argv[1:]:
+        send([int(x, 16) for x in argv[2].split(" ")])
     elif argv[0][-2:] == 'on' or "on" in argv[1:]:
         print("On...")
         send([0x00,0x60,0x00])
