@@ -17,8 +17,7 @@
 # Requires PyUSB, etc.
 import usb.core
 import usb.util
-import time
-import sys
+import sys, os, time
 
 # command list
 commandlist="commands.json"
@@ -70,34 +69,59 @@ def send(dat):
     jread(32)
     jsend(dat)
 
+def vol_to_byte(lev):
+    """
+    Converts a textual volume string (MIN/0 -- 31/MAX) to appropriate binary value.
+    (Basically just multiplies by 8...)
+    """
+    if lev == "MIN":
+        lev = 0
+    elif lev == "MAX":
+        lev = 31
+    return int(lev)*8
+
+def byte_to_vol(vol):
+    """
+    Converts a volume output byte to a readable value
+    """
+    return int(vol,16)/8
+
 commands = {
 }
 def read_commands():
     if not commands:
-        try:
-            import json
-            commands.update(
-                json.load(open(commandlist))
-            )
-        except:
-            print("Cannot read extra commands, continuing anyway.",file=sys.stderr)
-    return commands
+        import json
+        for path in [
+            os.path.dirname(os.path.realpath(__file__)),
+            os.getcwd(),
+            os.environ['HOME']
+        ]:
+            try:
+                with open(os.path.join(path,commandlist)) as f:
+                    print("Attempting %s..." % os.path.join(path,commandlist))
+                    commands.update(json.load(f))
+                    if commands:
+                        return commands
+            except:
+                pass
+        print("Cannot read extra commands, continuing anyway.",file=sys.stderr)
 
 if __name__ == '__main__':
     from sys import argv, stdout
 
-    if argv[0][-3:] == 'off' or "off" in argv[1:]:
-        print("Off...")
+    if "off" in argv[1:2]:
         jread(32)
         jsend([0x04,0x00,0x60,0xc0,0x2f])
+        # TODO: take state
         jread(32, 0.2)
-    elif argv[0][-2:] == 'on' or "on" in argv[1:]:
-        print("On...")
+    elif "on" in argv[1:2]:
         send([0x00,0x60,0x00])
-        jread(32, 0.5)
-    elif "vol" in argv[1:] and len(argv) > 2:
+        # TODO: take state
+        jread(32, 0.2)
+    elif len(argv) > 2 and "vol" == argv[1]:
         #TODO: if argv[2] == 'up'
-        level=(int(argv[2])*8)
+        #TODO: if argv[2] == 'down'
+        level=vol_to_byte(argv[2])
         jread(32)
         jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
         jread(32)
