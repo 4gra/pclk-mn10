@@ -22,52 +22,26 @@ import sys
 
 # command list
 commandlist="commands.json"
-# Do the device setup.
-dev = usb.core.find(idVendor=0x054C,idProduct=0x0034)
-if not dev:
-    print("Cannot find PCLK-MN10 device; exiting.",file=sys.stderr)
-    sys.exit(1)
 
-dev.set_configuration()
-cfg = dev.get_active_configuration()
-# print(cfg)
-intf = cfg[(0,0)]
-def finder(mask):
-    return lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == mask
+def get_pipes():
+    """Do the device setup."""
+    dev = usb.core.find(idVendor=0x054C,idProduct=0x0034)
+    if not dev:
+        print("Cannot find PCLK-MN10 device; exiting.",file=sys.stderr)
+        sys.exit(1)
 
-ep  = usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_OUT))  # 0x01
-rep = usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN))  # 0x82
-# print ("Found %s." % [ep, rep])
+    dev.set_configuration()
+    cfg = dev.get_active_configuration()
+    # print(cfg)
+    intf = cfg[(0,0)]
+    def finder(mask):
+        return lambda e: usb.util.endpoint_direction(e.bEndpointAddress) == mask
 
+    return (usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_OUT)),  # 0x01
+            usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN)))  # 0x82
+    # print ("Found %s." % [ep, rep])
 
-"""
-We _were_ going to attempt to figure out control commands but that was unneeded.
-
-The windows driver (and this library) send something (very close to):
-# SETUP PACKET:
-#    80 06 00 01 00 00 12 00
-
->>> dev.ctrl_transfer(0x80, 0x06, 0x0100, 0, 0x12)
-array('B', [18, 1, 16, 1, 255, 0, 0, 64, 76, 5, 52, 0, 0, 1, 1, 2, 0, 1])
-
-# SETUP PACKET:
-#   80 06 00 02 00 00 09 02
-
->>> dev.ctrl_transfer(0x80, 0x06, 0x0002, 0, 0x0902)
-array('B', [9, 2, 32, 0, 1, 1, 2, 128, 50, 9, 4, 0, 0, 2, 0, 0, 0, 0, 7, 5, 1, 2, 64, 0, 0, 7, 5, 130, 2, 64, 0, 0])
-
-# Finally a write/read seemed to do something -- just the once...
->>> ep.write([0x00,0x60,0x00])
-3
->>> rep.read(40)
-array('B', [0, 96, 17, 0, 100])
->>> ep.write([0x00,0x60,0x00])
-3
->>> rep.read(40)
-array('B')
-# it transpires that the device had become confused somehow; a replug
-# determined that this was indeed the poweron command.
-"""
+(ep, rep) = get_pipes()
 
 def xprint(dat, pre=""):
     print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
