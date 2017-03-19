@@ -89,10 +89,18 @@ if __name__ == '__main__':
     if argv[0][-3:] == 'off' or "off" in argv[1:]:
         print("Off...")
         jread(32)
-        jsend([0x04,0x00,0x60,0xc0,0x2f])  # ASCII 4F := 'O'
-        #jsend([0x04,0x00,0x60,0xb0,0x26])  # ASCII 46 := 'F' 
-        #send([0x04,0x00,0x60,0x90,0x26])  # ASCII 46 := 'F' 
+        jsend([0x04,0x00,0x60,0xc0,0x2f])
         jread(32, 0.2)
+    elif argv[0][-2:] == 'on' or "on" in argv[1:]:
+        print("On...")
+        send([0x00,0x60,0x00])
+        jread(32, 0.5)
+    elif "vol" in argv[1:] and len(argv) > 2:
+        #TODO: if argv[2] == 'up'
+        level=(int(argv[2])*8)
+        jread(32)
+        jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
+        jread(32)
     elif "read" in argv[1:]:
         jread(32)
     elif "send" in argv[1:] and len(argv) > 2:
@@ -100,10 +108,6 @@ if __name__ == '__main__':
             for x in hexin(arg):
                 send(x)
                 jread(32, 0.2)
-    elif argv[0][-2:] == 'on' or "on" in argv[1:]:
-        print("On...")
-        send([0x00,0x60,0x00])
-        jread(32, 0.5)
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
         while True:
             jread(32)
