@@ -22,12 +22,28 @@ import sys, os, time
 # command list
 commandlist="commands.json"
 
+class debug_pipe:
+    """
+    Returns two virtual USB pipes which simply relay communication to stdout.
+    """
+    def __init__(self, afile):
+        self.afile = afile
+
+    def write(self, data):
+        self.afile.write(">>(%s)\n" % " ".join(["%02x" % x for x in data]))
+
+    def read(self, ll):
+        self.afile.write(" < .. (read ≤%s bytes)\n" % ll)
+
+
 def get_pipes():
-    """Do the device setup."""
+    """
+    Performs device setup.
+    Returns two USB endoints for (write, read).
+    """
     dev = usb.core.find(idVendor=0x054C,idProduct=0x0034)
     if not dev:
-        print("Cannot find PCLK-MN10 device; exiting.",file=sys.stderr)
-        sys.exit(1)
+        raise IOError("Cannot find PCLK-MN10 device")
 
     dev.set_configuration()
     cfg = dev.get_active_configuration()
@@ -39,8 +55,6 @@ def get_pipes():
     return (usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_OUT)),  # 0x01
             usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN)))  # 0x82
     # print ("Found %s." % [ep, rep])
-
-(ep, rep) = get_pipes()
 
 def xprint(dat, pre=""):
     print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
@@ -56,6 +70,7 @@ def jsend(dat):
     ep.write(dat)
 
 def jread(ll, delay=None):
+    """just read <ll bytes>, optionally waiting <delay seconds> first."""
     if delay:
         time.sleep(delay)
     out = rep.read(ll)
@@ -88,7 +103,10 @@ def byte_to_vol(vol):
 
 commands = {
 }
-def read_commands():
+
+# TODO: precompile this list once we are no longer
+# adding to it continually!
+def load_commands():
     if not commands:
         import json
         for path in [
@@ -98,16 +116,29 @@ def read_commands():
         ]:
             try:
                 with open(os.path.join(path,commandlist)) as f:
-                    print("Attempting %s..." % os.path.join(path,commandlist))
+                    print("Attempting %s..." % os.path.join(path,commandlist),file=sys.stderr)
                     commands.update(json.load(f))
                     if commands:
                         return commands
             except:
                 pass
-        print("Cannot read extra commands, continuing anyway.",file=sys.stderr)
+        print("Cannot load extra commands, continuing anyway.",file=sys.stderr)
+    return commands
+
 
 if __name__ == '__main__':
-    from sys import argv, stdout
+    from sys import argv, stdout, stderr
+    if len(argv) > 1 and argv[1] == '--test':
+        argv.pop(1)
+        td = debug_pipe(stdout)
+        (ep, rep) = (td, td)
+    else:
+        try:
+            (ep, rep) = get_pipes()
+        except IOError as err:
+            print(err,file=stderr)
+            print("Use --test flag to continue without device.",file=stderr)
+            exit(1)
 
     if "off" in argv[1:2]:
         jread(32)
@@ -126,7 +157,12 @@ if __name__ == '__main__':
         jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
         jread(32)
     elif "read" in argv[1:]:
-        jread(32)
+        try:
+            ll=int(argv[2])
+        except:
+            ll=32
+        finally:
+            jread(ll)
     elif "send" in argv[1:] and len(argv) > 2:
         for arg in argv[2:]:
             for x in hexin(arg):
@@ -135,21 +171,25 @@ if __name__ == '__main__':
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
         while True:
             jread(32)
-    # TODO: precompile this list once we are no longer
-    # adding to it continually!
-    elif len(argv) > 1 and argv[1] in read_commands():
+    elif len(argv) > 1 and argv[1] in load_commands():
+        # TODO: arguments ending in "_" take parameters.
+        if argv[1][-1] == "_":
+            print("Parameterised options not yet supported, sorry.")
+            sys.exit(1)
         for x in hexin(commands[argv[1]]):
             send(x)
             jread(32, 0.2)
             jread(32, 0.2)
     else:
         print("""\
-Usage: stub.py <command>
+Usage: stub.wpy [--test] <command>
 Where <command> is one of:
   send 'XX XX XX' ['XX XX XX' [...]]
+   (sends arbitrary bytes)
   read [bytes]
+   (reads a maximum of [bytes] bytes, default 32)
   poll
 Or one of the named commands:
 %s
-""" % "\n".join(["  %s" % x for x in read_commands().keys()]))
+""" % "\n".join(["  %s" % x for x in load_commands().keys()]),file=stderr)
 
