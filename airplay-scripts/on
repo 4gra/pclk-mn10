@@ -1,0 +1,7 @@
+#!/bin/bash
+# Sends appropriate commands to switch on the hifi device.
+semaphore="/tmp/.pclk.shutdown_requested"
+ctrl="$(dirname $0)/control"
+[[ -e $semaphore ]] && rm $semaphore 
+$ctrl on >/dev/null && \
+$ctrl TAPE >/dev/null

@@ -182,7 +182,7 @@ if __name__ == '__main__':
             jread(32, 0.2)
     else:
         print("""\
-Usage: stub.wpy [--test] <command>
+Usage: stub.py [--test] <command>
 Where <command> is one of:
   send 'XX XX XX' ['XX XX XX' [...]]
    (sends arbitrary bytes)

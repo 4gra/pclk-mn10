@@ -1,0 +1,13 @@
+#!/bin/bash
+# Performs shutdown after a period of inactivity.
+# Running 'on' during this period will cancel pending shutdowns.
+timeout=300
+flag="/tmp/.pclk.shutdown_requested"
+ctrl="$(dirname $0)/control"
+
+# TODO: if shutdown requested more than $timeout ago, shut down immediately.
+[[ -e $flag ]] && exit 0
+
+touch $flag
+sleep $timeout
+[[ -e $flag ]] && { $ctrl off >/dev/null && rm $flag; }
