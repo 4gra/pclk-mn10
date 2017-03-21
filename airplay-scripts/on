@@ -1,0 +1,7 @@
+#!/bin/bash
+# Sends appropriate commands to switch on the hifi device.
+flag="/tmp/.pclk.shutdown_requested"
+ctrl="$(dirname $0)/control"
+[[ -e $flag ]] && rm $flag 
+$ctrl on >/dev/null && \
+$ctrl TAPE >/dev/null
