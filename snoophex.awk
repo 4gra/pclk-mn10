@@ -17,15 +17,26 @@
 # (not implmemented yet...)
 #  BINBYTES : comma-separated list of bytes to render as binary
 #  DECBYTES : comma-separated list of bytes to render as decimal
-#
-function hextoasc(h,no,i,x,v){
+
+# Converts each byte to its ASCII equivalent in case it might be useful!
+function hexfmt(h,no,i,x,v){
   for(i=1;i<=length(h);++i){
     x=index("0123456789abcdef",substr(h,i,1));
     v=(16*v)+x-1;
   }
+  return v;
+}
+function hextoasc(h,no){
+  v=hexfmt(h,no);
   if(v < 128 && v >= 32) return sprintf(" %c",v);
   return no;
 }
+function hextodec(h,no){
+  v=hexfmt(h,no);
+  if(v > 9) return sprintf("%3s",v);
+  return no;
+}
+
 BEGIN{printf INDENT"# >> is to device; < is from device. -<- are control flows.";}
 TIMES && /^\[[0-9]+ ms\]/{TIME=sprintf("%7.2f",substr($1,2)/1000);}
 /URB_FUNCTION_BULK_OR_INTERRUPT_TRANSFER/{TYP="DATA";SP=" ";}
@@ -33,12 +44,16 @@ TIMES && /^\[[0-9]+ ms\]/{TIME=sprintf("%7.2f",substr($1,2)/1000);}
 /DIRECTION_IN/{	DIR="\n"INDENT SP TIME SP "<" SP;}
 /DIRECTION_OUT/{DIR="\n"INDENT SP TIME SP ">>";}
 /00:/{
-  if (ASCII && hex) { print hex; hex=""; }
+  if (dhex) { printf dhex; dhex=""; nl=1;}
+  if (ahex) { printf ahex; ahex=""; nl=1;}
+  if (nl) { print ""; }
   $1=DIR;printf;
-  if(ASCII) { hex=$1; for(i = 2; i <= NF; i++) hex=hex" "hextoasc($i,"  "); }
+  if(DEC)   { dhex=$1; for(i = 2; i <= NF; i++) dhex=dhex""hextodec($i,"   ");}
+  if(ASCII) { ahex=$1; for(i = 2; i <= NF; i++) ahex=ahex" "hextoasc($i,"  ");}
 }
 /[^0]0:/{
   $1="";printf;
-  if(ASCII) { hex=hex $1; for(i = 2; i <= NF; i++) hex=hex" "hextoasc($i,"  "); }
+  if(DEC)   { dhex=dhex $1; for(i = 2; i <= NF; i++) dhex=dhex""hextodec($i,"   ");}
+  if(ASCII) { ahex=ahex $1; for(i = 2; i <= NF; i++) ahex=ahex" "hextoasc($i,"  ");}
 }
 END{print "";}
