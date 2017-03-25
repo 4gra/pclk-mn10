@@ -27,6 +27,7 @@ function hexfmt(h,no,i,x,v){
   return v;
 }
 function hextoasc(h,no){
+  if(h == 25) return " %%";
   v=hexfmt(h,no);
   if(v < 128 && v >= 32) return sprintf(" %c",v);
   return no;
