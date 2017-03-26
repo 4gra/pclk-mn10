@@ -56,8 +56,10 @@ def get_pipes():
             usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN)))  # 0x82
     # print ("Found %s." % [ep, rep])
 
-def xprint(dat, pre=""):
+def xprint(dat, pre="", asc=True):
     print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
+    if asc:
+        print("TX|%s"%" ".join([ "%2s"%chr(x) if (x > 31 and x < 127) else '..' for x in dat ]))
 
 def hexin(instr):
     """converts a string or list of strings into commands"""
@@ -116,7 +118,7 @@ def load_commands():
         ]:
             try:
                 with open(os.path.join(path,commandlist)) as f:
-                    print("Attempting %s..." % os.path.join(path,commandlist),file=sys.stderr)
+                    #print("Attempting %s..." % os.path.join(path,commandlist),file=sys.stderr)
                     commands.update(json.load(f))
                     if commands:
                         return commands
@@ -139,7 +141,6 @@ if __name__ == '__main__':
             print(err,file=stderr)
             print("Use --test flag to continue without device.",file=stderr)
             exit(1)
-
     if "off" in argv[1:2]:
         jread(32)
         jsend([0x04,0x00,0x60,0xc0,0x2f])
@@ -181,6 +182,8 @@ if __name__ == '__main__':
             jread(32, 0.2)
             jread(32, 0.2)
     else:
+        ckeys=[x for x in load_commands().keys()]
+        ckeys.sort()
         print("""\
 Usage: stub.py [--test] <command>
 Where <command> is one of:
@@ -191,5 +194,5 @@ Where <command> is one of:
   poll
 Or one of the named commands:
 %s
-""" % "\n".join(["  %s" % x for x in load_commands().keys()]),file=stderr)
+""" % "\n".join(["  %s" % x for x in ckeys]),file=stderr)
 
