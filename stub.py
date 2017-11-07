@@ -21,6 +21,7 @@ import sys, os, time
 
 # command list
 commandlist="commands.json"
+print_ascii=True
 
 class debug_pipe:
     """
@@ -56,9 +57,9 @@ def get_pipes():
             usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN)))  # 0x82
     # print ("Found %s." % [ep, rep])
 
-def xprint(dat, pre="", asc=True):
+def xprint(dat, pre="", asc=None):
     print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
-    if asc:
+    if asc or (asc == None and print_ascii == True):
         print("TX|%s"%" ".join([ "%2s"%chr(x) if (x > 31 and x < 127) else '..' for x in dat ]))
 
 def hexin(instr):
@@ -66,18 +67,18 @@ def hexin(instr):
     for cmd in instr.split(","):
         yield [int(x, 16) for x in cmd.split(" ") if x]
 
-def jsend(dat):
+def jsend(dat, asc=None):
     """just send. and print."""
-    xprint(dat, ">> ")
+    xprint(dat, ">> ", asc)
     ep.write(dat)
 
-def jread(ll, delay=None):
+def jread(ll, delay=None, asc=None):
     """just read <ll bytes>, optionally waiting <delay seconds> first."""
     if delay:
         time.sleep(delay)
     out = rep.read(ll)
     while out:
-        xprint(out, " < ")
+        xprint(out, " < ", asc)
         out = rep.read(ll)
     stdout.flush()
 
@@ -89,18 +90,19 @@ def send(dat):
 def vol_to_byte(lev):
     """
     Converts a textual volume string (MIN/0 -- 31/MAX) to appropriate binary value.
-    (Basically just multiplies by 8...)
+    Shifts left three bits (i.e. multiply by 8...)
     """
     if lev == "MIN":
         lev = 0
     elif lev == "MAX":
         lev = 31
-    return int(lev)*8
+    return int(hex(int(lev,10) << 3),16)
 
 def byte_to_vol(vol):
     """
-    Converts a volume output byte to a readable value
+    Converts a volume output byte (as string) to a readable value
     """
+    return int(hex(int(vol,16) >> 3),16)
     return int(vol,16)/8
 
 commands = {
@@ -170,8 +172,9 @@ if __name__ == '__main__':
                 send(x)
                 jread(32, 0.2)
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
+        asc = ('--noascii' not in argv[1:])
         while True:
-            jread(32)
+            jread(32, 0.1, asc)
     elif len(argv) > 1 and argv[1] in load_commands():
         # TODO: arguments ending in "_" take parameters.
         if argv[1][-1] == "_":
@@ -191,7 +194,8 @@ Where <command> is one of:
    (sends arbitrary bytes)
   read [bytes]
    (reads a maximum of [bytes] bytes, default 32)
-  poll
+  poll [--noascii] [bytes] 
+   (reads once per second)
 Or one of the named commands:
 %s
 """ % "\n".join(["  %s" % x for x in ckeys]),file=stderr)
