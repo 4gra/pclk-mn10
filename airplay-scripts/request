@@ -1,0 +1,13 @@
+#!/bin/bash
+# request use of the PCLK device
+# usage: request (on|off) [source]
+
+# if on
+#   request shared lock on /tmp/pclk
+#       run 'on' command for source
+
+# if off
+#   if file exists
+#       sleep...
+#       request exclusive lock on /tmp/pclk
+#       turn off

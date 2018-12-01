@@ -1,7 +1,12 @@
 #!/bin/bash
 # Sends appropriate commands to switch on the hifi device.
+if [[ -n $1 ]]; then
+    SOURCE=$1
+else
+    SOURCE="TAPE"
+fi
 flag="/tmp/.pclk.shutdown_requested"
 ctrl="$(dirname $0)/control"
 [[ -e $flag ]] && rm $flag 
 $ctrl on >/dev/null && \
-$ctrl TAPE >/dev/null
+$ctrl $SOURCE >/dev/null
