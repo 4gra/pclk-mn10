@@ -38,6 +38,8 @@
 
 "tunerFM": "05 00 60 c1 03 00",
 "tunerAM": "05 00 60 c1 03 01",
+"tunerMono":"04 00 60 C1 0A",
+"tunerStereo":"04 00 60 C1 0B",
 "tunehz+": "04 00 60 c1 04",
 "tunehz-": "04 00 60 c1 05",
 "tunepre+":"04 00 60 c1 08",
