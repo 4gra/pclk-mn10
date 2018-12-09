@@ -18,4 +18,8 @@ Additional requirements, if you want the software to actually do anything:
 And, for the very brave, utterly untested (by me):
 - Any Sony hi-fi device with Control-I functionality, since it would appear that the PC-LINK port is essentially a Control-I port with power control!
 
+What this will never control:
+ - transfer of audio data (one way or the other) - these devices all handle MD contents as audio (be it analogue or digital).  
+ - NetMD devices (they're entirely different and covered by the likes of https://wiki.physik.fu-berlin.de/linux-minidisc/doku.php / https://github.com/AlexanderS/linux-minidisc)
+
 As this project is more of a journey of understanding than a product of any sort, please see the [wiki](https://github.com/4gra/pclk-mn10/wiki) for more details / work in progress.
