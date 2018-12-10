@@ -15,9 +15,12 @@
 # conditions; view the included file LICENCE for details.
 #
 # Requires PyUSB, etc.
-import usb.core
-import usb.util
 import sys, os, time
+try:
+    import usb.core
+    import usb.util
+except ImportError as err:
+    print("Import error (%s): test mode only" % err, file=sys.stderr)
 
 # command list
 commandlist="commands.json"
