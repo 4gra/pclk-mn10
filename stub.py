@@ -87,6 +87,10 @@ def send(dat):
     jread(32)
     jsend(dat)
 
+def make_out_header(dat):
+    """adds header, saving pesky length calculations"""
+    return [(len(dat) + 2), 0x00, 0x60] + dat
+
 def vol_to_byte(lev):
     """
     Converts a textual volume string (MIN/0 -- 31/MAX) to appropriate binary value.
@@ -124,8 +128,8 @@ def load_commands():
                     commands.update(json.load(f))
                     if commands:
                         return commands
-            except:
-                pass
+            except BaseException as e:
+                print(e, file=stderr)
         print("Cannot load extra commands, continuing anyway.",file=sys.stderr)
     return commands
 
@@ -166,6 +170,11 @@ if __name__ == '__main__':
             ll=32
         finally:
             jread(ll)
+    elif "asend" in argv[1:] and len(argv) > 2:
+        for arg in argv[2:]:
+            for x in hexin(arg):
+                send(make_out_header(x))
+                jread(32, 0.2)
     elif "send" in argv[1:] and len(argv) > 2:
         for arg in argv[2:]:
             for x in hexin(arg):
@@ -176,12 +185,23 @@ if __name__ == '__main__':
         while True:
             jread(32, 0.1, asc)
     elif len(argv) > 1 and argv[1] in load_commands():
-        # TODO: arguments ending in "_" take parameters.
-        if argv[1][-1] == "_":
-            print("Parameterised options not yet supported, sorry.")
-            sys.exit(1)
-        for x in hexin(commands[argv[1]]):
-            send(x)
+        mkheader = True
+        cmdstr = commands[argv[1]]
+        # handle parameters, if given (rather spurious error will be thrown if
+        # insufficient args are given)
+        for i, arg in enumerate(argv[2:]):
+            placeholder = "$"+str(i+1)
+            if placeholder in cmdstr:
+                cmdstr = cmdstr.replace(placeholder, arg)
+        if cmdstr.startswith("verbatim"):
+            mkheader = False
+            cmdstr = cmdstr[8:]
+        cmd = hexin(cmdstr)
+        for word in cmd:
+            if mkheader:
+                send(make_out_header(word))
+            else:
+                send(word[1:])
             jread(32, 0.2)
             jread(32, 0.2)
     else:
@@ -190,6 +210,8 @@ if __name__ == '__main__':
         print("""\
 Usage: stub.py [--test] <command>
 Where <command> is one of:
+  asend 'XX XX XX' ['XX XX XX' [...]]
+   (sends arbitrary bytes, automatically prepending appropriate header)
   send 'XX XX XX' ['XX XX XX' [...]]
    (sends arbitrary bytes)
   read [bytes]
