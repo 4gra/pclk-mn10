@@ -37,7 +37,8 @@
 "MDffwd":    "b0 12",
 "MDoff":     "b0 2f",
 "MDdiscs":   "b0 72",
-"MDdetect?": "b0 54 00 01",
+"MDdetect":  "b0 54 00 01",
+"MDtrkinf_": "b0 45 00 01 $1",
 
 "tunerFM":   "c1 03 00",
 "tunerAM":  "c1 03 01",
