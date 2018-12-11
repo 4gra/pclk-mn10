@@ -28,11 +28,11 @@ while true; do
                 ${pclk}/control vol $[$VOL*4/10+5]
             fi
         else
-            sleep $fastloop; 
+            sleep ${fastloop}
         fi
     else 
         VOL=""
-        sleep $slowloop
+        sleep ${slowloop}
     fi
     if [[ -z $OLDVOL && -n $VOL ]]; then
         ${pclk}/on ${tvsource}
