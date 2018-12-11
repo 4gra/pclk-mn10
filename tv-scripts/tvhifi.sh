@@ -2,11 +2,13 @@
 # Let your MD595 device become a soundbar, whatever that is
 # Designed for a Panasonic Viera 2015-ish series TV returning volume 0-100
 # (uses hacky homebrew curl-powered SOAP commands; not included)
+# TODO: only sync things if it's off / on the correct output. 
+# (Pending the ability to capture state).
 
 # command to return volume integer, 0-100
-volcmd="${HOME}/TV/SOAP/getvol"
+volcmd="$HOME/TV/SOAP/getvol"
 # commad to return mute status as 1 (muted) or 0 (noise-makey)
-mutecmd="${HOME}/TV/SOAP/getmute"
+mutecmd="$HOME/TV/SOAP/getmute"
 # path to the pclk control command
 pclk="$HOME/pclk-mn10"
 # MD595 source connected to the TV (likely OPTICAL, TAPE or ANALOG)
