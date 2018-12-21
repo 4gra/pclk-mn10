@@ -199,13 +199,13 @@ if __name__ == '__main__':
                 cmdstr = cmdstr.replace(placeholder, arg)
         if cmdstr.startswith("verbatim"):
             mkheader = False
-            cmdstr = cmdstr[8:]
+            cmdstr = cmdstr[9:]
         cmd = hexin(cmdstr)
         for word in cmd:
             if mkheader:
                 send(make_out_header(word))
             else:
-                send(word[1:])
+                send(word)
             jread(32, 0.2)
             jread(32, 0.2)
     else:
