@@ -123,7 +123,8 @@ def load_commands():
         for path in [
             os.path.dirname(os.path.realpath(__file__)),
             os.getcwd(),
-            os.environ['HOME']
+            os.environ['HOME'] if 'HOME' in os.environ else False,
+            os.environ['USERPROFILE'] if 'USERPROFILE' in os.environ else False
         ]:
             try:
                 with open(os.path.join(path,commandlist)) as f:
