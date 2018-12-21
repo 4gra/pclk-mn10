@@ -1,6 +1,6 @@
 {
 
-"on":	     "verbatim 00 06 00",
+"on":	     "verbatim 00 60 00",
 "off":	     "c0 2f",
 
 "input":     "c0 50 $1 ff 00", 
