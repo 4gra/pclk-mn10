@@ -1,26 +1,43 @@
 #!/usr/bin/env python3
-# Very, very basic control of a PCLK-MN10 attached to a compatible hi-fi unit.
-#
-# This is not a script - it's my stream of consciousness / workbook.  
-# Tools might follow.
-#
-# These tools with errant parameters could quite feasibly cause permanent
-# damage to a connected USB or onward hifi device: If this script bricks your
-# precious electronics YOU WERE WARNED.  However, it hasn't done to mine at
-# time of writing (and I don't have any spares).
-#
-# Copyright (C) 2017, https://github.com/4gra/pclk-mn10
-# This program comes with ABSOLUTELY NO WARRANTY; for details see included LICENCE.
-# This is free software, and you are welcome to redistribute it under certain
-# conditions; view the included file LICENCE for details.
-#
-# Requires PyUSB, etc.
+"""
+Very, very basic control of a PCLK-MN10 attached to a compatible hi-fi unit.
+
+This is not a script - it's my stream of consciousness / workbook.  
+Tools might follow.
+
+These tools with errant parameters could quite feasibly cause permanent
+damage to a connected USB or onward hifi device: If this script bricks your
+precious electronics YOU WERE WARNED.  However, it hasn't done to mine at
+time of writing (and I don't have any spares).
+
+Copyright (C) 2017, https://github.com/4gra/pclk-mn10
+This program comes with ABSOLUTELY NO WARRANTY; for details see included LICENCE.
+This is free software, and you are welcome to redistribute it under certain
+conditions; view the included file LICENCE for details.
+
+Requires PyUSB, etc.
+"""
 import sys, os, time
 try:
     import usb.core
     import usb.util
 except ImportError as err:
     print("Import error (%s): test mode only" % err, file=sys.stderr)
+
+__usage__ = """\
+Usage: stub.py [--test] <command>
+Where <command> is one of:
+  asend 'XX XX XX' ['XX XX XX' [...]]
+   (sends arbitrary bytes, automatically prepending appropriate header)
+  send 'XX XX XX' ['XX XX XX' [...]]
+   (sends arbitrary bytes)
+  read [bytes]
+   (reads a maximum of [bytes] bytes, default 32)
+  poll [--noascii] [bytes] 
+   (reads once per second)
+Or one of the named commands:
+%s
+"""
 
 # command list
 commandlist="commands.json"
@@ -189,40 +206,35 @@ if __name__ == '__main__':
         while True:
             jread(32, 0.1, asc)
     elif len(argv) > 1 and argv[1] in load_commands():
-        mkheader = True
-        cmdstr = commands[argv[1]]
-        # handle parameters, if given (rather spurious error will be thrown if
-        # insufficient args are given)
-        for i, arg in enumerate(argv[2:]):
-            placeholder = "$"+str(i+1)
-            if placeholder in cmdstr:
-                cmdstr = cmdstr.replace(placeholder, arg)
-        if cmdstr.startswith("verbatim"):
-            mkheader = False
-            cmdstr = cmdstr[9:]
-        cmd = hexin(cmdstr)
-        for word in cmd:
-            if mkheader:
-                send(make_out_header(word))
-            else:
-                send(word)
-            jread(32, 0.2)
-            jread(32, 0.2)
+        rest = argv[1:]
+        while len(rest) and rest[0] in load_commands():
+            cmdname = rest.pop(0)
+            mkheader = True
+            cmdstr = commands[cmdname]
+            # handle parameters, if given (rather spurious error will be thrown if
+            # insufficient args are given). This will also screw things up if we
+            # define non-sequential placeholders ... why did I do this at all?
+            for i, arg in enumerate(rest):
+                placeholder = "$"+str(i+1)
+                if placeholder in cmdstr:
+                    cmdstr = cmdstr.replace(placeholder, arg)
+                    rest.pop(0)
+                else:
+                    break
+            if cmdstr.startswith("verbatim"):
+                mkheader = False
+                cmdstr = cmdstr[9:]
+            cmd = hexin(cmdstr)
+            for word in cmd:
+                if mkheader:
+                    send(make_out_header(word))
+                else:
+                    send(word)
+                jread(32, 0.2)
+                jread(32, 0.2)
     else:
         ckeys=[x for x in load_commands().keys()]
         ckeys.sort()
-        print("""\
-Usage: stub.py [--test] <command>
-Where <command> is one of:
-  asend 'XX XX XX' ['XX XX XX' [...]]
-   (sends arbitrary bytes, automatically prepending appropriate header)
-  send 'XX XX XX' ['XX XX XX' [...]]
-   (sends arbitrary bytes)
-  read [bytes]
-   (reads a maximum of [bytes] bytes, default 32)
-  poll [--noascii] [bytes] 
-   (reads once per second)
-Or one of the named commands:
-%s
-""" % "\n".join(["  %s" % x for x in ckeys]),file=stderr)
+        print(__usage__ % "\n".join(["  %s" % x for x in ckeys]), file=stderr)
+
 
