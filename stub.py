@@ -168,16 +168,8 @@ if __name__ == '__main__':
             print(err,file=stderr)
             print("Use --test flag to continue without device.",file=stderr)
             exit(1)
-    if "off" in argv[1:2]:
-        jread(32)
-        jsend([0x04,0x00,0x60,0xc0,0x2f])
-        # TODO: take state
-        jread(32, 0.2)
-    elif "on" in argv[1:2]:
-        send([0x00,0x60,0x00])
-        # TODO: take state
-        jread(32, 0.2)
-    elif len(argv) > 2 and "vol" == argv[1]:
+    # TODO: handle parameters, such as volume (basically all of them), which need interpretation
+    if len(argv) > 2 and "vol" == argv[1]:
         #TODO: if argv[2] == 'up'
         #TODO: if argv[2] == 'down'
         level=vol_to_byte(argv[2])
