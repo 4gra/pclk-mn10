@@ -10,6 +10,7 @@
 "ANALOG":    "c0 50 0b ff 00",
 "OPTICAL":   "c0 50 08 ff 00",
 "TAPE":      "c0 50 05 ff 00",
+"ampdevice": "c0 6a",
 
 "mute":      "c0 c8 00",
 "vol_":      "c0 c8 $1",
@@ -39,6 +40,7 @@
 "MDdiscs":   "b0 72",
 "MDdetect":  "b0 54 00 01",
 "MDtrkinf_": "b0 45 00 01 $1",
+"MDdevice":  "b0 6a"
 
 "tunerFM":   "c1 03 00",
 "tunerAM":  "c1 03 01",

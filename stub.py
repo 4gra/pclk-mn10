@@ -56,7 +56,6 @@ class debug_pipe:
     def read(self, ll):
         self.afile.write(" < .. (read ≤%s bytes)\n" % ll)
 
-
 def get_pipes():
     """
     Performs device setup.
@@ -108,7 +107,10 @@ def send(dat):
     jsend(dat)
 
 def make_out_header(dat):
-    """adds header, saving pesky length calculations"""
+    """
+    adds header, saving pesky length calculations
+    TODO: concept of a master device (i.e. 0x90 for MD decks; 0xC0 for the "amp" in MD595)
+    """
     return [(len(dat) + 2), 0x00, 0x60] + dat
 
 def vol_to_byte(lev):
