@@ -14,9 +14,9 @@ pclk="$HOME/pclk-mn10"
 # MD595 source connected to the TV (likely OPTICAL, TAPE or ANALOG)
 tvsource="OPTICAL"
 # slow loop speed, in seconds (when TV has been off)
-slowloop=120
+slowloop=52
 # fast loop speed, in seconds (when TV is on)
-fastloop=1
+fastloop=0.8
 
 while true; do 
     OLDVOL="$VOL$MUTE"
