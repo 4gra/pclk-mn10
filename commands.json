@@ -35,6 +35,7 @@
 "MDrec":     "b0 07",
 "MDnext":    "b0 08",
 "MDprev":    "b0 09",
+
 "# this returns '[11 00 12] b8 70' info, not sure what.": "",
 "MDmoreinf": "b0 0f",
 "MDdispMode":"b0 2e",
@@ -43,13 +44,16 @@
 "MDdiscs":   "b0 72",
 "MDdetect":  "b0 54 00 01",
 "MDtrkinf_": "b0 45 00 $1 01",
+
 "# several data blocks here, I get 00-09 until I start seeing repeating '.. 45 00 $1 $2 ff ff ff 00' responses.": "",
 "MDtrkinf__":"b0 45 00 $1 $2",
 "MDdevice":  "b0 6a",
+
 "# for track titles, etc. continue incrementing $2 until zeroes are found": "",
 "MDtrktitle_":"b0 e8 00 00 $1 00 01",
 "MDtrktitle__":"b0 e8 00 00 $1 00 $2",
-"# don't know the difference between 48 and e8."
+
+"# don't know the difference between 48 and e8.": "",
 "MDtracktitle__":"b0 48 00 00 $1 00 $2",
 
 "# ---- these seem to be some sort of forced remote control mode: using any of them locks the machine into the given command until reboot": "",
