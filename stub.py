@@ -56,6 +56,11 @@ class debug_pipe:
     def read(self, ll):
         self.afile.write(" < .. (read ≤%s bytes)\n" % ll)
 
+
+def dtext(word):
+    """Silly ASCII printout helper"""
+    return "%1s"%chr(word) if (word > 31 and word < 127) else '' if word == 0 else '?'
+
 def get_pipes():
     """
     Performs device setup.
@@ -75,6 +80,37 @@ def get_pipes():
     return (usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_OUT)),  # 0x01
             usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN)))  # 0x82
     # print ("Found %s." % [ep, rep])
+
+def interpret(dat):
+    """
+    More experiental work at understanding the returned messages.
+     
+    12:36:15  < 0d 00 18 ca 63 01 ff ff ff ff 0c 23 26 00
+    12:36:15 TX|.. .. .. ..  c .. .. .. .. .. ..  #  & ..
+    12:36:15  < 14 00 18 ca e2 01 20 20 20 20 20 20 20 20 00 31 32 00 33 35 ff
+    12:36:15 TX|.. .. .. .. .. ..                         ..  1  2 ..  3  5 ..
+    """
+    #for msg in [o for o in dat if len(o)]:
+    msg = dat
+    #print("\n=[ start ]=" + "="*60)
+    if len(msg) > 0 and len(msg) < 4:
+        print("SHORT Message %s" % ' '.join(["{:02x}".format(s) for s in msg]))
+    elif len(msg) >= 4:
+        length=msg[0]
+        typ=msg[4]
+        print("Message {:02x}, addr {:02x}{:02x}:{:02x}, Length {:02x}".format(
+            typ, msg[1], msg[2], msg[3], length)
+        )
+        if typ == 0xe0:
+            text="".join([ dtext(x) for x in msg[5:15] ])
+            #seq = "{:02x}".format(int(msg[15:]))
+            seq = msg[15:16]
+            print("Display update: \"{}\" seq {}".format(text, seq))
+            if len(msg[16:]):
+                print(" ".join("{:02x}".format(x) for x in msg[16:]))
+        if len(msg[5:]):
+            print(" ".join("{:02x}".format(x) for x in msg[5:]))
+    print("=[  end  ]=" + "="*60 + "\n")
 
 def xprint(dat, pre="", asc=None):
     print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
@@ -115,14 +151,20 @@ def make_out_header(dat):
 
 def vol_to_byte(lev):
     """
-    Converts a textual volume string (MIN/0 -- 31/MAX) to appropriate binary value.
+    Converts a numeric volume string to an appropriate binary value.
     Shifts left three bits (i.e. multiply by 8...)
+    """
+    return int(hex(round(lev) << 3),16)
+
+def volstr_to_byte(lev):
+    """
+    Converts a textual volume string (MIN/0 -- 31/MAX) to appropriate binary value.
     """
     if lev == "MIN":
         lev = 0
     elif lev == "MAX":
         lev = 31
-    return int(hex(int(lev,10) << 3),16)
+    return vol_to_byte(int(lev, 10))
 
 def byte_to_vol(vol):
     """
@@ -174,7 +216,18 @@ if __name__ == '__main__':
     if len(argv) > 2 and "vol" == argv[1]:
         #TODO: if argv[2] == 'up'
         #TODO: if argv[2] == 'down'
-        level=vol_to_byte(argv[2])
+        level=volstr_to_byte(argv[2])
+        jread(32)
+        jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
+        jread(32)
+    elif len(argv) == 3 and "volsp" == argv[1]:
+        # Shairport-sync volume goes from 0 to -30 (dB); -144 is 'mute'
+        if argv[2] == '-144':
+            level = 0
+        else:
+            level = (30+float(argv[2]))*0.8
+            print("got %s, converted to %d" % (argv[2], level))
+            level=vol_to_byte(level)
         jread(32)
         jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
         jread(32)
