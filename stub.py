@@ -39,6 +39,10 @@ Or one of the named commands:
 %s
 """
 
+# endpoints, so we can preload them
+EP = None
+REP = None
+
 # command list
 commandlist="commands.json"
 print_ascii=True
@@ -125,17 +129,17 @@ def hexin(instr):
 def jsend(dat, asc=None):
     """just send. and print."""
     xprint(dat, ">> ", asc)
-    ep.write(dat)
+    EP.write(dat)
 
 def jread(ll, delay=None, asc=None):
     """just read <ll bytes>, optionally waiting <delay seconds> first."""
     if delay:
         time.sleep(delay)
-    out = rep.read(ll)
+    out = REP.read(ll)
     while out:
         xprint(out, " < ", asc)
-        out = rep.read(ll)
-    stdout.flush()
+        out = REP.read(ll)
+    sys.stdout.flush()
 
 def send(dat):
     """sends data and reads a max. of 40 bytes back."""
@@ -199,19 +203,32 @@ def load_commands():
     return commands
 
 
-if __name__ == '__main__':
-    from sys import argv, stdout, stderr
-    if len(argv) > 1 and argv[1] == '--test':
-        argv.pop(1)
-        td = debug_pipe(stdout)
-        (ep, rep) = (td, td)
-    else:
-        try:
-            (ep, rep) = get_pipes()
-        except IOError as err:
-            print(err,file=stderr)
-            print("Use --test flag to continue without device.",file=stderr)
-            exit(1)
+def setup_pipes(test=False, force=False):
+    global EP, REP
+    if test:
+        td = debug_pipe(sys.stdout)
+        (EP, REP) = (td, td)
+    elif EP is None or REP is None or force == True:
+        (EP, REP) = get_pipes()
+
+def run(args):
+    """
+    Run the code!
+    """
+    # Unfortunately I haven't bothered to clean this up properly
+    # so I am just going to insert some spurious first argument...
+    argv = ['control'] + args
+    try:
+        if len(argv) > 1 and argv[1] == '--test':
+            setup_pipes(test=True)
+            argv.pop(1)
+        else:
+            setup_pipes(test=False)
+    except IOError as err:
+        print(err,file=sys.stderr)
+        print("Use --test flag to continue without device.",file=sys.stderr)
+        exit(1)
+
     # TODO: handle parameters, such as volume (basically all of them), which need interpretation
     if len(argv) > 2 and "vol" == argv[1]:
         #TODO: if argv[2] == 'up'
@@ -282,6 +299,8 @@ if __name__ == '__main__':
     else:
         ckeys=[x for x in load_commands().keys()]
         ckeys.sort()
-        print(__usage__ % "\n".join(["  %s" % x for x in ckeys]), file=stderr)
+        print(__usage__ % "\n".join(["  %s" % x for x in ckeys]), file=sys.stderr)
 
 
+if __name__ == '__main__':
+    run(sys.argv[1:])
