@@ -282,7 +282,6 @@ def run(args):
                 placeholder = "$"+str(i+1)
                 if placeholder in cmdstr:
                     cmdstr = cmdstr.replace(placeholder, arg)
-                    rest.pop(0)
                 else:
                     break
             if cmdstr.startswith("verbatim"):
