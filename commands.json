@@ -34,6 +34,7 @@
 "MDstop":    "b0 01",
 "MDpause":   "b0 02",
 "MDppause":  "b0 03",
+"MDeject":   "b0 04 00 00 00",
 "MDrec":     "b0 07",
 "MDnext":    "b0 08",
 "MDprev":    "b0 09",
