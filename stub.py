@@ -121,6 +121,46 @@ def xprint(dat, pre="", asc=None):
     if asc or (asc == None and print_ascii == True):
         print("TX|%s"%" ".join([ "%2s"%chr(x) if (x > 31 and x < 127) else '..' for x in dat ]))
 
+
+def textin(instr):
+    """converts a string into lists of ascii numbers"""
+    return [ord(cc) if (ord(cc) >= 20 and ord(cc) < 127) else '?' for cc in instr]
+
+
+def chunk(msg, chunk_msg=None, string=[], limit=20, chunk_index=None):
+    """
+    Returns a chunked set of messages for a given string parameter
+    Pads with 00,00 when complete.
+
+    The continuation message 'chunk_msg' may contain a counter - if chunk_index
+    is specified, then the correspnding index in chunk_msg will be incremented
+    on each continuation.
+    """
+    text = textin(string)
+    pad = [00]
+    provisional = msg + text
+    difference = limit - len(provisional) 
+    if ( difference >= 2 ):
+        return [ provisional + (difference * pad)]
+    elif chunk_msg:
+        head = provisional[0:limit]
+        tail = chunk_msg + provisional[limit:]
+        if chunk_index:
+            chunk_msg[chunk_index] += 1
+        return [ head ] + chunk(tail,chunk_msg,limit=limit,chunk_index=chunk_index)
+
+def chunktest(msg, chunk_msg, string, limit=10, chunk_index=2):
+    """
+    >>> chunktest([1,1,1],[2,2],"testing something longer",9,1)
+    01 01 01 74 65 73 74 69 6e
+    02 02 67 20 73 6f 6d 65 74
+    02 03 68 69 6e 67 20 6c 6f
+    02 04 6e 67 65 72 00 00 00
+    """
+    msgs = chunk(msg, chunk_msg, string, limit, chunk_index)
+    for line in msgs:
+        print(" ".join(["%02x"%x for x in line]))
+
 def hexin(instr):
     """converts a string or list of strings into commands"""
     for cmd in instr.split(","):
