@@ -2,6 +2,7 @@
 _*/
 _Public
 control
+*~
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
