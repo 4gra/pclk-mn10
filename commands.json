@@ -34,6 +34,7 @@
 "MDstop":    "b0 01",
 "MDpause":   "b0 02",
 "MDppause":  "b0 03",
+"# this can end in 01 00 or 00 00 - I wonder why.": "",
 "MDeject":   "b0 04 00 00 00",
 "MDrec":     "b0 07",
 "MDnext":    "b0 08",
@@ -59,16 +60,7 @@
 "# several data blocks here, I get 00-09 until I start seeing repeating '.. 45 00 $1 $2 ff ff ff 00' responses.": "",
 "MDlongTrackInfo__":"b0 45 00 $1 $2",
 
-"MDtrkinf_": "b0 45 00 $1 01",
-
-"# several data blocks here, I get 00-09 until I start seeing repeating '.. 45 00 $1 $2 ff ff ff 00' responses.": "",
-"MDtrkinf__":"b0 45 00 $1 $2",
-"MDdevice":  "b0 6a",
-
 "# for track titles, etc. continue incrementing $2 until zeroes are found": "",
-"# don't know the difference between 48 and e8.":"",
-"MDtrktitle__":"b0 e8 00 00 $1 00 $2",
-
 "# don't know the difference between 48 and e8.": "",
 "MDtracktitle__":"b0 48 00 00 $1 00 $2",
 
