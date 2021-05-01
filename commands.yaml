@@ -1,0 +1,133 @@
+# Commands can be:
+# single: "00 11 22"
+# lists:
+#  - "00 11 22"
+#  - "33 44 55"
+# verbatim:
+#  - verbatim: "00 00 00"
+#  - verbatim: "11 11 11"
+
+'on': 
+  - verbatim: "00 60 00"
+  - help: "turns the device on."
+'off':        "c0 2f"
+
+input:
+  - cmd: "c0 50 $1 ff 00"
+    params:
+      input: 3
+        options:
+          CD: '02'
+          MD: '04'
+          TUNER: '00'
+          ANALOG: '0b'
+          OPTICAL: '08'
+          TAPE: '05'
+
+# old-fashioned direct inputs
+CD:          "c0 50 02 ff 00" 
+MD:          "c0 50 04 ff 00"
+TUNER:       "c0 50 00 ff 00"
+ANALOG:      "c0 50 0b ff 00"
+OPTICAL:     "c0 50 08 ff 00"
+TAPE:        "c0 50 05 ff 00"
+
+# not sure what this does
+ampdevice:   "c0 6a"
+
+mute:        "c0 c8 00"
+vol:
+  - cmd:      "c0 c8 $1"
+    params:
+      level: 3
+
+CDplay:      "90 00"
+CDstop:      "90 01"
+CDpause:     "90 02"
+CDppause:    "90 03"
+CDnext:      "90 08"
+CDprev:      "90 09"
+CDffwd:      "90 12"
+CDartist:
+  - cmd:     "90 48 00 01 00 01 00 09 01 01"
+    params:
+      disc: 4
+    chunk: 10
+
+CDdisctitle:
+  - cmd:     "90 48 00 01 00 00 00 09 01 01"
+    params:
+      disc: 4
+    chunk: 10
+
+CDtitle:
+  - cmd:    "90 48 00 01 01 00 00 09 01 01"
+    params:
+      disc: 4
+      track: 5
+    chunk: 10
+
+CDdiscs:     "90 72"
+CDeject:     "90 54 00 01"
+
+MDplay:      "b0 00"
+MDstop:      "b0 01"
+MDpause:     "b0 02"
+MDppause:    "b0 03"
+MDeject:     "b0 04 00 00 00"
+MDrec:       "b0 07"
+MDnext:      "b0 08"
+MDprev:      "b0 09"
+
+# this returns '[11 00 12] b8 70' info, not sure what.
+MDmoreinf:   "b0 0f"
+MDdispMode:  "b0 2e"
+MDffwd:      "b0 12"
+MDoff:       "b0 2f"
+MDdiscs:     "b0 72"
+MDdetect:    "b0 54 00 01"
+MDtrkinf_:   "b0 45 00 $1 01"
+
+# several data blocks here, I get 00-09 until I start 
+# seeing repeating '.. 45 00 $1 $2 ff ff ff 00' responses.
+MDtrkinf__:  "b0 45 00 $1 $2"
+MDdevice:    "b0 6a"
+
+# for chunked titles, etc. continue incrementing chunk until zeroes are found at end.
+MDdiscctitle:      
+  - cmd:      "b0 48 00 00 00 00 01"
+    # entirely unclear the difference between 48 and e8.
+    alt:      "b0 e8 00 00 00 00 01"
+    chunk: 7
+MDtitle:      
+  - cmd:      "b0 48 00 00 01 00 01"
+    # entirely unclear the difference between 48 and e8.
+    alt:      "b0 e8 00 00 01 00 01"
+    params:
+      track: 5
+    chunk: 7
+
+# these seem to be some sort of forced remote control mode.
+# using any of them locks the machine into the given command until reboot
+MD disable force rc:    "b0 c0 00"
+MD force rc play:       "b0 c0 10"
+MD force rc pause/play: "b0 c0 11"
+MD force rc play/pause: "b0 c0 12"
+MD force display mode:  "b0 c0 1d"
+MD force repeat mode:   "b0 c0 20"
+MD force rc stop:       "b0 c0 13"
+MD force rc eject:      "b0 c0 40"
+MD force record:        "b0 c0 50"
+MD hex sector(?) display: "b0 c0 ??"
+
+MDNameIn:               "b0 c0 6f"
+
+tunerFM:        "c1 03 00"
+tunerAM:        "c1 03 01"
+tunerMono:      "c1 0a"
+tunerStereo:    "c1 0b"
+tunehz+:        "c1 04"
+tunehz-:        "c1 05"
+tunepre+:       "c1 08"
+tunepre-:       "c1 09"
+

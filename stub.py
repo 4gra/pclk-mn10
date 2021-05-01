@@ -44,7 +44,7 @@ EP = None
 REP = None
 
 # command list
-commandlist="commands.json"
+commandlist="commands"
 print_ascii=True
 
 class debug_pipe:
@@ -186,6 +186,25 @@ def send(dat):
     jread(32)
     jsend(dat)
 
+def is_error(reply):
+    """
+    returns True if a given reply is an error type
+    (0x0E or 0x0F).
+    """
+    return ( len(reply) < 4 or reply[4] in (0x0F, 0x0F) )
+
+def expected_reply_hdr(cmd):
+    """
+    Generates the expected reply for a given command as a list of bytes
+    Can't anticipate length yet.
+
+    In the list, match using:
+        None: accept any
+        (tuple, ): accept any in set
+    """
+    return [None, 00, (10, 12, 18), (cmd[2] + 0x08), cmd[3]]
+    
+
 def make_out_header(dat):
     """
     adds header, saving pesky length calculations
@@ -224,7 +243,13 @@ commands = {
 # adding to it continually!
 def load_commands():
     if not commands:
-        import json
+        mode = 'yaml'
+        try:
+            from yaml import safe_load as load
+        except ImportError:
+            print("Can't import yaml, you're missing out...")
+            mode = 'json'
+            from json import load
         for path in [
             os.path.dirname(os.path.realpath(__file__)),
             os.getcwd(),
@@ -232,9 +257,9 @@ def load_commands():
             os.environ['USERPROFILE'] if 'USERPROFILE' in os.environ else False
         ]:
             try:
-                with open(os.path.join(path,commandlist)) as f:
+                with open(os.path.join(path,f'{commandlist}.{mode}')) as f:
                     #print("Attempting %s..." % os.path.join(path,commandlist),file=sys.stderr)
-                    commands.update(json.load(f))
+                    commands.update(load(f))
                     if commands:
                         return commands
             except BaseException as e:

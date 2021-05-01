@@ -50,12 +50,11 @@
 "MDtrkinf__":"b0 45 00 $1 $2",
 "MDdevice":  "b0 6a",
 
-"# for track titles, etc. continue incrementing $2 until zeroes are found": "",
-"MDtrktitle_":"b0 e8 00 00 $1 00 01",
-"MDtrktitle__":"b0 e8 00 00 $1 00 $2",
-
-"# don't know the difference between 48 and e8.": "",
-"MDtracktitle__":"b0 48 00 00 $1 00 $2",
+"# for track titles, etc. continue incrementing $2 until zeroes are found.  I don't know the difference between 48 and e8.": "",
+"MDdisctitle": "b0 e8 00 00 00 00 $1",
+"MDtitle_":    "b0 e8 00 00 $1 00 $2",
+"MDdisctitle2":"b0 48 00 00 00 00 $1",
+"MDtitle2_":   "b0 48 00 00 $1 00 $2",
 
 "# ---- these seem to be some sort of forced remote control mode: using any of them locks the machine into the given command until reboot": "",
 "MD disable force rc": "b0 c0 00",
