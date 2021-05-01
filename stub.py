@@ -10,7 +10,7 @@ damage to a connected USB or onward hifi device: If this script bricks your
 precious electronics YOU WERE WARNED.  However, it hasn't done to mine at
 time of writing (and I don't have any spares).
 
-Copyright (C) 2017, https://github.com/4gra/pclk-mn10
+Copyright (C) 2021, https://github.com/4gra/pclk-mn10
 This program comes with ABSOLUTELY NO WARRANTY; for details see included LICENCE.
 This is free software, and you are welcome to redistribute it under certain
 conditions; view the included file LICENCE for details.
@@ -164,7 +164,8 @@ def chunktest(msg, chunk_msg, string, limit=16, chunk_index=2):
 def hexin(instr):
     """converts a string or list of strings into commands"""
     for cmd in instr.split(","):
-        yield [int(x, 16) for x in cmd.split(" ") if x]
+        vals = [x for x in cmd.split(" ") if x]
+        yield [int(x, 16) for x in vals]
 
 def jsend(dat, asc=None):
     """just send. and print."""
@@ -251,6 +252,71 @@ def setup_pipes(test=False, force=False):
     elif EP is None or REP is None or force == True:
         (EP, REP) = get_pipes()
 
+def cmd_vol(level):
+    """
+    Change volume level according to display value
+    """
+    #TODO: if argv[2] == 'up'
+    #TODO: if argv[2] == 'down'
+    level=volstr_to_byte(level)
+    jread(32)
+    jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
+    jread(32)
+
+def cmd_volsp(value):
+    """
+    Shairport-sync volume goes from 0 to -30 (dB); -144 is 'mute'
+    """
+    if value == '-144':
+        level = 0
+    else:
+        level = (30+float(value))*0.8
+        print("got %s, converted to %d" % (value, level))
+        level=vol_to_byte(level)
+    jread(32)
+    jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
+    jread(32)
+
+def cmd_read(bytes=32):
+    """
+    Read a given number of bytes from the PCLK 
+    """
+    try:
+        ll=int(bytes)
+    except:
+        ll=32
+    finally:
+        jread(ll)
+
+def cmd_send(commands):
+    """
+    Send a command string or strings to the device verbatim.
+    Waits a short while for a response.
+    """
+    for arg in commands:
+        for x in hexin(arg):
+            send(x)
+            jread(32, 0.2)
+
+def cmd_asend(commands):
+    """
+    Converts short command string(s) into valid command(s) and sends them.
+    Waits a short while for a response.
+    """
+    for arg in commands:
+        for x in hexin(arg):
+            send(make_out_header(x))
+            jread(32, 0.2)
+
+
+def cmd_poll(print_ascii=True):
+    """
+    Continuously polls the device for information and prints it out.
+    Optionally prints ASCII interpretation, also.
+    """
+    while True:
+        jread(32, 0.1, print_ascii)
+
 def run(args):
     """
     Run the code!
@@ -269,46 +335,19 @@ def run(args):
         print("Use --test flag to continue without device.",file=sys.stderr)
         exit(1)
 
-    # TODO: handle parameters, such as volume (basically all of them), which need interpretation
+    # TODO: generate this silly menu automatically as per run.py
     if len(argv) > 2 and "vol" == argv[1]:
-        #TODO: if argv[2] == 'up'
-        #TODO: if argv[2] == 'down'
-        level=volstr_to_byte(argv[2])
-        jread(32)
-        jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
-        jread(32)
+        cmd_vol(argv[2])
     elif len(argv) == 3 and "volsp" == argv[1]:
-        # Shairport-sync volume goes from 0 to -30 (dB); -144 is 'mute'
-        if argv[2] == '-144':
-            level = 0
-        else:
-            level = (30+float(argv[2]))*0.8
-            print("got %s, converted to %d" % (argv[2], level))
-            level=vol_to_byte(level)
-        jread(32)
-        jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
-        jread(32)
+        cmd_volsp(argv[3])
     elif "read" in argv[1:]:
-        try:
-            ll=int(argv[2])
-        except:
-            ll=32
-        finally:
-            jread(ll)
+        cmd_read(argv[2])
     elif "asend" in argv[1:] and len(argv) > 2:
-        for arg in argv[2:]:
-            for x in hexin(arg):
-                send(make_out_header(x))
-                jread(32, 0.2)
+        cmd_asend(argv[2:])
     elif "send" in argv[1:] and len(argv) > 2:
-        for arg in argv[2:]:
-            for x in hexin(arg):
-                send(x)
-                jread(32, 0.2)
+        cmd_send(argv[2:])
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
-        asc = ('--noascii' not in argv[1:])
-        while True:
-            jread(32, 0.1, asc)
+        cmd_poll('--noascii' not in argv[1:])
     elif len(argv) > 1 and argv[1] in load_commands():
         rest = argv[1:]
         while len(rest) and rest[0] in load_commands():
