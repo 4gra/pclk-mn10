@@ -239,10 +239,31 @@ def byte_to_vol(vol):
 commands = {
 }
 
+def path_list():
+    return [
+        os.path.dirname(os.path.realpath(__file__)),
+        os.getcwd(),
+        os.environ['HOME'] if 'HOME' in os.environ else False,
+        os.environ['USERPROFILE'] if 'USERPROFILE' in os.environ else False
+    ]
+
 # TODO: precompile this list once we are no longer
 # adding to it continually!
 def load_commands():
     if not commands:
+        mode = 'ini'
+        try:
+            from configparser import ConfigParser
+            for path in path_list():
+                try:
+                    c = ConfigParser()
+                    c.read(os.path.join(path,f'{commandlist}.{mode}'))
+                    #print("Attempting %s..." % os.path.join(path,commandlist),file=sys.stderr)
+                    commands.update(c['commands'])
+                    if commands:
+                        return commands
+                except BaseException as e:
+                    print(e, file=stderr)
         mode = 'yaml'
         try:
             from yaml import safe_load as load
@@ -250,12 +271,7 @@ def load_commands():
             print("Can't import yaml, you're missing out...")
             mode = 'json'
             from json import load
-        for path in [
-            os.path.dirname(os.path.realpath(__file__)),
-            os.getcwd(),
-            os.environ['HOME'] if 'HOME' in os.environ else False,
-            os.environ['USERPROFILE'] if 'USERPROFILE' in os.environ else False
-        ]:
+        for path in path_list():
             try:
                 with open(os.path.join(path,f'{commandlist}.{mode}')) as f:
                     #print("Attempting %s..." % os.path.join(path,commandlist),file=sys.stderr)
