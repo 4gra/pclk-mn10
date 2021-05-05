@@ -127,7 +127,7 @@ def textin(instr):
     return [ord(cc) if (ord(cc) >= 20 and ord(cc) < 127) else '?' for cc in instr]
 
 
-def chunk(msg, chunk_msg=None, string=[], limit=20, chunk_index=None):
+def make_chunk(msg, chunk_msg=None, string=[], limit=20, chunk_index=None):
     """
     Returns a chunked set of messages for a given string parameter
     Pads with 00,00 when complete.
@@ -149,7 +149,7 @@ def chunk(msg, chunk_msg=None, string=[], limit=20, chunk_index=None):
             chunk_msg[chunk_index] += 1
         return [ head ] + chunk(tail,chunk_msg,limit=limit,chunk_index=chunk_index)
 
-def chunktest(msg, chunk_msg, string, limit=10, chunk_index=2):
+def chunktest(msg, chunk_msg, string, limit=16, chunk_index=2):
     """
     >>> chunktest([1,1,1],[2,2],"testing something longer",9,1)
     01 01 01 74 65 73 74 69 6e
@@ -157,7 +157,7 @@ def chunktest(msg, chunk_msg, string, limit=10, chunk_index=2):
     02 03 68 69 6e 67 20 6c 6f
     02 04 6e 67 65 72 00 00 00
     """
-    msgs = chunk(msg, chunk_msg, string, limit, chunk_index)
+    msgs = make_chunk(msg, chunk_msg, string, limit, chunk_index)
     for line in msgs:
         print(" ".join(["%02x"%x for x in line]))
 
@@ -264,8 +264,8 @@ def run(args):
             argv.pop(1)
         else:
             setup_pipes(test=False)
-    except IOError as err:
-        print(err,file=sys.stderr)
+    except (IOError, NameError) as err:
+        print(f'Loading encountered error "{err}"',file=sys.stderr)
         print("Use --test flag to continue without device.",file=sys.stderr)
         exit(1)
 
