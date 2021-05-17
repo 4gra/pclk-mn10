@@ -23,6 +23,11 @@ try:
     import usb.util
 except ImportError as err:
     print("Import error (%s): test mode only" % err, file=sys.stderr)
+try:
+    from interpret import interpret
+except ImportError as err:
+    print("Can't import interpretation module, that's OK", file=sys.stderr)
+    interpret = None
 
 __usage__ = """\
 Usage: stub.py [--test] <command>
@@ -85,36 +90,6 @@ def get_pipes():
             usb.util.find_descriptor(intf, custom_match=finder(usb.util.ENDPOINT_IN)))  # 0x82
     # print ("Found %s." % [ep, rep])
 
-def interpret(dat):
-    """
-    More experiental work at understanding the returned messages.
-     
-    12:36:15  < 0d 00 18 ca 63 01 ff ff ff ff 0c 23 26 00
-    12:36:15 TX|.. .. .. ..  c .. .. .. .. .. ..  #  & ..
-    12:36:15  < 14 00 18 ca e2 01 20 20 20 20 20 20 20 20 00 31 32 00 33 35 ff
-    12:36:15 TX|.. .. .. .. .. ..                         ..  1  2 ..  3  5 ..
-    """
-    #for msg in [o for o in dat if len(o)]:
-    msg = dat
-    #print("\n=[ start ]=" + "="*60)
-    if len(msg) > 0 and len(msg) < 4:
-        print("SHORT Message %s" % ' '.join(["{:02x}".format(s) for s in msg]))
-    elif len(msg) >= 4:
-        length=msg[0]
-        typ=msg[4]
-        print("Message {:02x}, addr {:02x}{:02x}:{:02x}, Length {:02x}".format(
-            typ, msg[1], msg[2], msg[3], length)
-        )
-        if typ == 0xe0:
-            text="".join([ dtext(x) for x in msg[5:15] ])
-            #seq = "{:02x}".format(int(msg[15:]))
-            seq = msg[15:16]
-            print("Display update: \"{}\" seq {}".format(text, seq))
-            if len(msg[16:]):
-                print(" ".join("{:02x}".format(x) for x in msg[16:]))
-        if len(msg[5:]):
-            print(" ".join("{:02x}".format(x) for x in msg[5:]))
-    print("=[  end  ]=" + "="*60 + "\n")
 
 def xprint(dat, pre="", asc=None):
     print("%s%s" % (pre, " ".join("{:02x}".format(x) for x in dat)))
@@ -168,6 +143,8 @@ def hexin(instr):
 
 def jsend(dat, asc=None):
     """just send. and print."""
+    if interpret:
+        interpret(dat)
     xprint(dat, ">> ", asc)
     EP.write(dat)
 
@@ -177,6 +154,8 @@ def jread(ll, delay=None, asc=None):
         time.sleep(delay)
     out = REP.read(ll)
     while out:
+        if interpret:
+            interpret(out)
         xprint(out, " < ", asc)
         out = REP.read(ll)
     sys.stdout.flush()
