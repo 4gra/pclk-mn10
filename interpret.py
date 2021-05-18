@@ -47,6 +47,11 @@ def interpret(dat, prefix=" | "):
     elif typ[0] == 0x13:
         print(prefix+f"Yes, I am here!")
 
+    # < 05 00 18 c8 c7 70
+    elif typ == [0x18, 0xc7]:
+        print(prefix+"Reply to display request?  ("+" ".join("{:02x}".format(x) for x in msg[5:])+")")
+
+    # < 12 00 18 c8 e0 4f 50 54 49 43 41 4c 20 49 4e 31 34 00 00
     elif typ[1] == 0xe0 and msg[3] == 0xc8:
         text="".join([ dtext(x) for x in msg[5:15] ])
         #seq = "{:02x}".format(int(msg[15:]))

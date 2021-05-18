@@ -15,6 +15,7 @@
 "ampdevice": "c0 6a",
 
 "ampunknown": "c0 6b",
+"ampdisplay": "c0 c7",
 
 "mute":      "c0 c8 00",
 "vol_":      "c0 c8 $1",
