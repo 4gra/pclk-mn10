@@ -1,5 +1,10 @@
 #!/usr/bin/python3
 
+
+def dtext(word):
+    """Silly ASCII printout helper"""
+    return "%1s"%chr(word) if (word > 31 and word < 127) else '' if word == 0 else '?'
+
 def interpret(dat, prefix=" | "):
     """
     More experiental work at understanding the returned messages.

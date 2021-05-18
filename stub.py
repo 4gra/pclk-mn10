@@ -66,10 +66,6 @@ class debug_pipe:
         self.afile.write(" < .. (read ≤%s bytes)\n" % ll)
 
 
-def dtext(word):
-    """Silly ASCII printout helper"""
-    return "%1s"%chr(word) if (word > 31 and word < 127) else '' if word == 0 else '?'
-
 def get_pipes():
     """
     Performs device setup.

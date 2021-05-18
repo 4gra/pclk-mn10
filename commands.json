@@ -14,6 +14,8 @@
 "TAPE":      "c0 50 05 ff 00",
 "ampdevice": "c0 6a",
 
+"ampunknown": "c0 6b",
+
 "mute":      "c0 c8 00",
 "vol_":      "c0 c8 $1",
 
