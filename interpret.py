@@ -2,7 +2,7 @@
 
 def dtext(word):
     """Silly ASCII printout helper"""
-    return "%1s"%chr(word) if (word > 31 and word < 127) else '' if word == 0 else '?'
+    return "%1s"%chr(word) if (word >= 0x20 and word < 127) else '' if word == 0 else '?'
 
 def interpret(dat, prefix=" | "):
     """
@@ -44,8 +44,9 @@ def interpret(dat, prefix=" | "):
             print(prefix+f"Disc {disc} has {msg[9]:02} tracks, {hrs:01}:{mins:02}:{secs:02} duration.")
         print(prefix+"-- -- -- -- -- -- 06 -- -- -- -- -- -- 13 -- 15 16 --")
 
-    # TODO: check if from b0 or 90, figure out yet what '12' means
-    elif typ == [0x12, 0x70] and msg[5] == 0x00:
+    # TODO: check if from b0 (12, 70) or 90 (10, 70), figure out what '10 / 12' mean, and
+    #       if (0x18, 0x70) tells us what subsystems we can query?
+    elif typ[0] in (0x10, 0x12) and typ[1] == 0x70 and msg[5] == 0x00:
         (disc, track) = msg[6], msg[7]
         # TODO: enum
         play_modes = {
@@ -53,7 +54,7 @@ def interpret(dat, prefix=" | "):
             0x01: 'Repeat All',
             0x02: 'Repeat 1',
             0x08: 'Shuffle',
-            0x10: 'PGM',
+            0x10: 'Program',
         }
         rec_modes = {
             0x00: 'STEREO',
@@ -79,20 +80,27 @@ def interpret(dat, prefix=" | "):
 
         play_set = [name for (bits,name) in play_state.items() if (bits & msg[9])] or ['stopped']
         play_mode = [name for (bits,name) in play_modes.items() if (bits & msg[12])] or ['none']
-        rec_flags  = [name for (bits,name) in rec_flags.items() if (bits & msg[13])] or ['none']
-        recmode = rec_modes[msg[14]] if msg[14] in rec_modes else 'unknown'
-        rec_src = [name for (bits,name) in rec_source.items() if (bits & msg[15])] or ['unavailable']
+        rec_flags_set = []
+        recmode = None
+        rec_src = []
+        try:
+            rec_flags_set = [name for (bits,name) in rec_flags.items() if (bits & msg[13])] or ['none']
+            recmode = rec_modes[msg[14]] if msg[14] in rec_modes else 'unknown'
+            rec_src = [name for (bits,name) in rec_source.items() if (bits & msg[15])] or ['unavailable']
+        except IndexError:
+            print(prefix+f"Not a recordable medium I suppose. TODO, detect this from the message.")
         
         playstate = ", ".join(play_set)
-        recsource = ", ".join(rec_src)
         playmodes = ", ".join(play_mode)
-        recflags  = ", ".join(rec_flags)
+        recflags  = ", ".join(rec_flags_set)
+        recsource = ", ".join(rec_src)
 
         print(prefix+f"Status for disc {disc}, Track {track}:")
         print(prefix+f"Playback: {playstate}, modes: {playmodes}.")
         print(prefix+f"Rec Mode: {recmode}, source {recsource}, flags: {recflags}.")
         print(prefix+f"Byte 08? {msg[8]:02x} ({msg[8]:03})")
-        print(prefix+f"Byte 16? {msg[16]:02x} ?")
+        if len(msg) > 15:
+            print(prefix+f"Byte 16? {msg[16]:02x} ?")
         print(prefix+"-- -- -- -- -- -- -- -- 08 -- 10 11 -- -- -- -- 16 --")
 
     elif typ == [0x18, 0x70]:
@@ -100,7 +108,11 @@ def interpret(dat, prefix=" | "):
             0x02: 'CD', 0x04: 'MD', 0x00: 'TUNER', 0x0B: 'ANALOG', 
             0x08: 'OPTICAL', 0x05: 'TAPE'
         }
-        src=sources[msg[5]]
+        src =''
+        try:
+            src=sources[msg[5]]
+        except KeyError:
+            src=f'Unknown {msg[5]:02x}'
         change="CHANGED" if msg[7] == 3 else "not changed"
         print(prefix+f"Input source {src}, {change}")
         return True
@@ -122,11 +134,63 @@ def interpret(dat, prefix=" | "):
             print(prefix+" ".join("{:02x}".format(x) for x in msg[16:]))
         #print(prefix+"=[  end  ]=" + "="*60 + "\n")
 
+#    elif type == [0x18, 0xc1]:
+#        print(prefix+"Another display update?")
+#        text="".join([ dtext(x) for x in msg[9:] ])
+#        print(prefix+"Display update: \"{}\"".format(text))
+#
+#        # | Message 18,c1, addr 00:c8, Length 16
+#        # | 00 04 00 ff 53 54 41 4e 44 42 59 00 00 00 00 00 00 00
+#        # < 16 00 18 c8 c1 00 04 00 ff 53 54 41 4e 44 42 59 00 00 00 00 00 00 00
+#        #TX|.. .. .. .. .. .. .. .. ..  S  T  A  N  D  B  Y .. .. .. .. .. .. ..
+#        # | Message 18,c1, addr 00:c8, Length 16
+#        # | 00 04 00 ff 20 20 20 20 20 20 20 00 00 00 00 00 00 00
+#        # < 16 00 18 c8 c1 00 04 00 ff 20 20 20 20 20 20 20 00 00 00 00 00 00 00
+#        #TX|.. .. .. .. .. .. .. .. ..                      .. .. .. .. .. .. ..
+#        # | Message 18,c1, addr 00:c8, Length 16
+#        # | 00 04 00 ff 53 54 41 4e 44 42 59 00 00 00 00 00 00 00
+#        # < 16 00 18 c8 c1 00 04 00 ff 53 54 41 4e 44 42 59 00 00 00 00 00 00 00
+#        #TX|.. .. .. .. .. .. .. .. ..  S  T  A  N  D  B  Y .. .. .. .. .. .. ..
+#        # | Message 18,c1, addr 00:c8, Length 16
+#        # | 00 04 00 ff 20 20 20 20 20 20 20 00 00 00 00 00 00 00
+#        # < 16 00 18 c8 c1 00 04 00 ff 20 20 20 20 20 20 20 00 00 00 00 00 00 00
+#        #TX|.. .. .. .. .. .. .. .. ..                      .. .. .. .. .. .. ..
+#
+
+    #elif typ[0] in (0x10, 0x12) and 
     elif typ[1] == 0xe0 and msg[3] != 0xc8:
         seq = msg[15:16]
-        print(prefix+"NOT a display update...")
-        if len(msg[16:]):
-            print(prefix+" ".join("{:02x}".format(x) for x in msg[16:]))
+        print(prefix+"ASCII display / time update?")
+
+        text = []
+        sep = True
+        for byte in msg[5:]:
+            if byte == 00:
+                sep = True
+            elif sep:
+                sep = False
+                text += dtext(byte)
+            else:
+                text[-1] += dtext(byte)
+
+        print(prefix+"["+"|".join(text)+"]")
+        for byte in msg[-2:]:
+            print(prefix+f"Remainder: {byte:02x} ({byte:02})...")
+
+        # Before CD playback
+        # < 17 00 10 98 e0 31 00 34 31 00 00 00 00 00 00 20 36 39 00 31 35 00 03 00
+        #TX|.. .. .. .. ..  1 ..  4  1 .. .. .. .. .. ..     6  9 ..  1  5 .. .. ..
+
+        # From OPTICAL 
+        # | Message 18,e0, addr 00:03, Length 0e
+        # < 0e 00 18 03 e0 00 01 08 00 ff f0 ff ff ff ff
+        #TX|.. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+        # < 0e 00 18 03 e0 00 01 08 00 ff ff ff ff ff ff
+        #TX|.. .. .. .. .. .. .. .. .. .. .. .. .. .. ..
+
+        # From MD playback
+        # < 14 00 12 b8 e0 31 00 34 00 00 00 00 31 00 00 00 30 30 00 a3 00
+        #TX|.. .. .. .. ..  1 ..  4 .. .. .. ..  1 .. .. ..  0  0 .. .. ..
 
     elif len(msg[5:]):
         print(prefix+" ".join("{:02x}".format(x) for x in msg[5:]))
