@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-
 def dtext(word):
     """Silly ASCII printout helper"""
     return "%1s"%chr(word) if (word > 31 and word < 127) else '' if word == 0 else '?'
@@ -33,6 +32,49 @@ def interpret(dat, prefix=" | "):
         }
         ecmd = msg[5] if len(msg) > 5 else None
         print(prefix+"ERROR {:02x}{:02x} ({:s}) for command {:02x}".format(typ[0],typ[1], errs[typ[1]], ecmd))
+
+    # TODO: check if from b0 or 90, figure out yet what '12' means
+    elif typ == [0x12, 0x70] and msg[5] == 0x00:
+        (disc, track) = msg[6], msg[7]
+        # TODO: enum
+        play_modes = {
+            0x00: 'None',
+            0x01: 'Repeat All',
+            0x02: 'Repeat 1',
+            0x08: 'Shuffle',
+            0x10: 'PGM',
+        }
+        rec_modes = {
+            0x00: 'STEREO',
+            0x01: 'MONO',
+            0x02: 'MD2',
+            0x03: 'MD4',
+        }
+        play_state = {
+            0x00: 'stop',
+            0x01: 'play',
+            0x02: 'pause',
+            0x04: 'record',
+        }
+        rec_source = {
+            0x08: 'ANALOG',
+            0x10: 'DIGITAL',
+        }
+
+        play_set = [name for (bits,name) in play_state.items() if (bits & msg[9])] or ['stopped']
+        play_mode = [name for (bits,name) in play_modes.items() if (bits & msg[12])] or ['none']
+        rec_src = [name for (bits,name) in rec_source.items() if (bits & msg[15])] or ['unavailable']
+        
+        playstate = ", ".join(play_set)
+        recsource = ", ".join(rec_src)
+        playmodes = ", ".join(play_mode)
+        recmode = rec_modes[msg[14]] if msg[14] in rec_modes else 'unknown'
+
+        print(prefix+f"Status block: Disc {disc}, Track {track}")
+        print(prefix+f"Playback State: {playstate}.")
+        print(prefix+f"Play Modes: {playmodes}.")
+        print(prefix+f"Rec Mode: {recmode}, source {recsource}.")
+        #print(prefix+"-- -- -- -- -- 05 06 07 08 09 10 11 12 13 14 15 16 17 -- -- --")
 
     elif typ == [0x18, 0x70]:
         sources = {
