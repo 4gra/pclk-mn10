@@ -34,6 +34,17 @@ def interpret(dat, prefix=" | "):
         print(prefix+"ERROR {:02x}{:02x} ({:s}) for command {:02x}".format(typ[0],typ[1], errs[typ[1]], ecmd))
 
     # TODO: check if from b0 or 90, figure out yet what '12' means
+    elif typ == [0x12, 0x71] and msg[5] == 0x00:
+        media = (0x01 & msg[8])
+        wp = (0x01 & msg[14])
+        disc = msg[7]
+        (tracks, hrs, mins, secs) = (msg[9:13])
+        print(prefix+f"Media change. Disc inserted: {'yes' if media else 'no'}, Write-protected: {'yes' if wp else ('no' if media else 'n/a')}.")
+        if (media):
+            print(prefix+f"Disc {disc} has {msg[9]:02} tracks, {hrs:01}:{mins:02}:{secs:02} duration.")
+        print(prefix+"-- -- -- -- -- -- 06 -- -- -- -- -- -- 13 -- 15 16 --")
+
+    # TODO: check if from b0 or 90, figure out yet what '12' means
     elif typ == [0x12, 0x70] and msg[5] == 0x00:
         (disc, track) = msg[6], msg[7]
         # TODO: enum
@@ -56,6 +67,11 @@ def interpret(dat, prefix=" | "):
             0x02: 'pause',
             0x04: 'record',
         }
+        rec_flags = {
+            0x01: 'Smart Space',
+            0x02: 'L.SYNC',
+            0x10: 'LP Stamp',
+        }
         rec_source = {
             0x08: 'ANALOG',
             0x10: 'DIGITAL',
@@ -63,18 +79,21 @@ def interpret(dat, prefix=" | "):
 
         play_set = [name for (bits,name) in play_state.items() if (bits & msg[9])] or ['stopped']
         play_mode = [name for (bits,name) in play_modes.items() if (bits & msg[12])] or ['none']
+        rec_flags  = [name for (bits,name) in rec_flags.items() if (bits & msg[13])] or ['none']
+        recmode = rec_modes[msg[14]] if msg[14] in rec_modes else 'unknown'
         rec_src = [name for (bits,name) in rec_source.items() if (bits & msg[15])] or ['unavailable']
         
         playstate = ", ".join(play_set)
         recsource = ", ".join(rec_src)
         playmodes = ", ".join(play_mode)
-        recmode = rec_modes[msg[14]] if msg[14] in rec_modes else 'unknown'
+        recflags  = ", ".join(rec_flags)
 
-        print(prefix+f"Status block: Disc {disc}, Track {track}")
-        print(prefix+f"Playback State: {playstate}.")
-        print(prefix+f"Play Modes: {playmodes}.")
-        print(prefix+f"Rec Mode: {recmode}, source {recsource}.")
-        #print(prefix+"-- -- -- -- -- 05 06 07 08 09 10 11 12 13 14 15 16 17 -- -- --")
+        print(prefix+f"Status for disc {disc}, Track {track}:")
+        print(prefix+f"Playback: {playstate}, modes: {playmodes}.")
+        print(prefix+f"Rec Mode: {recmode}, source {recsource}, flags: {recflags}.")
+        print(prefix+f"Byte 08? {msg[8]:02x} ({msg[8]:03})")
+        print(prefix+f"Byte 16? {msg[16]:02x} ?")
+        print(prefix+"-- -- -- -- -- -- -- -- 08 -- 10 11 -- -- -- -- 16 --")
 
     elif typ == [0x18, 0x70]:
         sources = {
