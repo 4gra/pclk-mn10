@@ -31,7 +31,7 @@ def interpret(dat, prefix=" | "):
             0x0e: 'invalid parameters?',
             0x0f: 'invalid command?'
         }
-        ecmd = msg[5] if len(msg) > 5 else ''
+        ecmd = msg[5] if len(msg) > 5 else None
         print(prefix+"ERROR {:02x}{:02x} ({:s}) for command {:02x}".format(typ[0],typ[1], errs[typ[1]], ecmd))
 
     elif typ == [0x18, 0x70]:
