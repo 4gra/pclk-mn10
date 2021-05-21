@@ -160,7 +160,6 @@ def interpret(dat, prefix=" | "):
     #elif typ[0] in (0x10, 0x12) and 
     elif typ[1] == 0xe0 and msg[3] != 0xc8:
         seq = msg[15:16]
-        print(prefix+"ASCII display / time update?")
 
         text = []
         sep = True
@@ -173,9 +172,11 @@ def interpret(dat, prefix=" | "):
             else:
                 text[-1] += dtext(byte)
 
-        print(prefix+"["+"|".join(text)+"]")
+        print(prefix+"Display (time?) update ["+"|".join(text)+"] (typically Disc/Trk/MM/SS)")
+        rest=""
         for byte in msg[-2:]:
-            print(prefix+f"Remainder: {byte:02x} ({byte:02})...")
+            rest+= f"{byte:02x} ({byte:02}) "
+        print(prefix+f"Remainder: {rest}")
 
         # Before CD playback
         # < 17 00 10 98 e0 31 00 34 31 00 00 00 00 00 00 20 36 39 00 31 35 00 03 00
