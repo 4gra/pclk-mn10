@@ -20,7 +20,8 @@
 "mute":      "c0 c8 00",
 "vol_":      "c0 c8 $1",
 
-"#":"why do these commands, ostensibly belonging to the amplifier c0, have a c3 prefix?",
+"#":"why do these commands, ostensibly belonging to the amplifier c0, have a c2/c3 prefix?",
+"dispinfo":  "c2 d2",
 "getEQ":     "c3 c9",
 
 "CDplay":    "90 00",
