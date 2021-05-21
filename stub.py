@@ -17,7 +17,7 @@ conditions; view the included file LICENCE for details.
 
 Requires PyUSB, etc.
 """
-import sys, os, time
+import sys, os, time, traceback
 try:
     import usb.core
     import usb.util
@@ -139,8 +139,14 @@ def hexin(instr):
 
 def jsend(dat, asc=None):
     """just send. and print."""
-    if interpret:
-        interpret(dat)
+    try:
+        if interpret:
+            interpret(dat)
+    except Exception as e:
+        print(f"!  Error \"{e}\" doing (experimental) interpretation, just ignore.")
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        print("!  "+traceback.format_tb(exc_traceback, limit=2)[1])
+
     xprint(dat, ">> ", asc)
     EP.write(dat)
 
@@ -150,8 +156,14 @@ def jread(ll, delay=None, asc=None):
         time.sleep(delay)
     out = REP.read(ll)
     while out:
-        if interpret:
-            interpret(out)
+        try:
+            if interpret:
+                interpret(out)
+        except Exception as e:
+            print(f"!  Error {e} doing (experimental) interpretation, just ignore.")
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            print("!  "+traceback.format_tb(exc_traceback, limit=2)[1])
+
         xprint(out, " < ", asc)
         out = REP.read(ll)
     sys.stdout.flush()
