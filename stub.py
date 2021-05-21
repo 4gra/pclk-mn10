@@ -139,32 +139,36 @@ def hexin(instr):
 
 def jsend(dat, asc=None):
     """just send. and print."""
+    inhibitraw = False
     try:
         if interpret:
-            interpret(dat)
+            inhibitraw = interpret(dat)
     except Exception as e:
         print(f"!  Error \"{e}\" doing (experimental) interpretation, just ignore.")
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print("!  "+traceback.format_tb(exc_traceback, limit=2)[1])
 
-    xprint(dat, ">> ", asc)
+    if not inhibitraw:
+        xprint(dat, ">> ", asc)
     EP.write(dat)
 
 def jread(ll, delay=None, asc=None):
     """just read <ll bytes>, optionally waiting <delay seconds> first."""
+    inhibitraw = False
     if delay:
         time.sleep(delay)
     out = REP.read(ll)
     while out:
         try:
             if interpret:
-                interpret(out)
+                inhibitraw = interpret(out)
         except Exception as e:
             print(f"!  Error {e} doing (experimental) interpretation, just ignore.")
             exc_type, exc_value, exc_traceback = sys.exc_info()
             print("!  "+traceback.format_tb(exc_traceback, limit=2)[1])
 
-        xprint(out, " < ", asc)
+        if not inhibitraw:
+            xprint(out, " < ", asc)
         out = REP.read(ll)
     sys.stdout.flush()
 
@@ -201,8 +205,10 @@ def byte_to_vol(vol):
     """
     Converts a volume output byte (as string) to a readable value
     """
-    return int(hex(int(vol,16) >> 3),16)
-    return int(vol,16)/8
+    #if type(vol) == str:
+    #    vol = int(vol,16)
+    return int(hex(vol >> 3),16)
+    #return int(vol,16)/8
 
 commands = {
 }
