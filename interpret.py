@@ -191,9 +191,21 @@ def interpret(dat, prefix=" | "):
 
 
     elif typ == 0x70 and addr[0] == 0x18:
-        ## INPUT change
-        #< 09 00 18 c9 70 81 04 09 05 7c
-        if msg[5] == 0x00:
+        if msg[5] in (0x80, 0x81):
+            ## FREQUENCY change
+            # < 09 00 18 c9 70 81 03 09 03 e7
+            #< 09 00 18 c9 70 80 14 08 22 2e
+            tband = ('AM','kHz') if msg[5] == 0x81 else ('FM','MHz')
+            preset = msg[6]
+            bandmaybe = msg[7]
+            freq = (msg[8] << 8) + msg[9]
+            if tband[0] == 'FM':
+                freq = freq / 100
+            pfprint(f"Tuner {tband[0]} frequency change: preset {preset:02}, freq {freq:03}{tband[1]}, band?? {bandmaybe:02x}")
+            return True
+        else:
+            ## INPUT change
+            #< 09 00 18 c9 70 81 04 09 05 7c
             sources = {
                 0x02: 'CD', 0x04: 'MD', 0x00: 'TUNER', 0x0B: 'ANALOG', 
                 0x08: 'OPTICAL', 0x05: 'TAPE'
@@ -205,28 +217,13 @@ def interpret(dat, prefix=" | "):
                 src=f'Unknown {msg[5]:02x}'
             change="CHANGED" if msg[7] == 3 else "not changed"
             pfprint(f"Input source {src}, {change}")
-            return True
 
-        ## FREQUENCY change
-        # < 09 00 18 c9 70 81 03 09 03 e7
-        #< 09 00 18 c9 70 80 14 08 22 2e
-        elif msg[5] in (0x80, 0x81):
-            tband = ('AM','kHz') if msg[5] == 0x81 else ('FM','MHz')
-            preset = msg[6]
-            bandmaybe = msg[7]
-            freq = (msg[8] << 8) + msg[9]
-            if tband[0] == 'FM':
-                freq = freq / 100
-            pfprint(f"Tuner {tband[0]} frequency change: preset {preset:02}, freq {freq:03}{tband[1]}, band?? {bandmaybe:02x}")
-            return True
-        else:
-            pfprint("UNKNOWN format for 0x70.")
-
-    elif typ == 0x50: # and addr[0] == 0x12:
+    elif typ == 0x50 and length == 0x0a: # and addr[0] == 0x12:
         # < 0a 00 12 b8 50 00 01 01 00 2e 09
         #TX|.. .. .. ..  P .. .. .. ..  . ..
         (devid, disc, track, hrs, mins, secs) = (msg[5:11])
         pfprint(f'Track info: id {devid}, disc {disc}, track {track:01}, {hrs:01}:{mins:02}:{secs:02}.')
+
 
     elif typ == 0x51:
         (unkn, hrs, mins, secs) = (msg[5:9])
