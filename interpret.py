@@ -175,6 +175,12 @@ def interpret(dat, prefix=" | "):
         (devid, disc, track, hrs, mins, secs) = (msg[5:11])
         print(prefix+f'Track info: id {devid}, disc {disc}, track {track:01}, {hrs:01}:{mins:02}:{secs:02}.')
 
+    elif typ == 0x51:
+        (unkn, hrs, mins, secs) = (msg[5:9])
+        print(prefix+f'Playback timing update 0x51: {hrs:01}:{mins:02}:{secs:02}')
+        if unkn != 00:
+            print(prefix+f"Unknown byte 5 has value {unkn:02x} ({unkn:02}")
+
     elif typ == 0x13:
         print(prefix+f"Yes, I am here!")
 
