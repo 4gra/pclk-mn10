@@ -231,6 +231,16 @@ def interpret(dat, prefix=" | "):
         if unkn != 00:
             pfprint(f"Unknown byte 5 has value {unkn:02x} ({unkn:02}")
 
+    elif typ == 0x63:
+        ##| Message 63, addr 18:ca, Length 0d
+        # | Device c2 is amp?#2, << IN, address 18
+        # | 01 ff ff ff ff 00 25 0c 06
+        # < 0d 00 18 ca 63 01 ff ff ff ff 00 25 0c 06
+        #TX|.. .. .. ..  c .. .. .. .. .. ..  % .. ..
+        (hrs, mins, secs, unkn) = (msg[10:14])
+        pfprint(f'Clock: {msg[5]:02x}: {hrs:02}:{mins:02}:{secs:02} {unkn:02x}?')
+        return True
+
     elif typ == 0x13:
         pfprint(f"Yes, I am here!")
 
