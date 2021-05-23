@@ -292,12 +292,14 @@ def run(args):
         for arg in argv[2:]:
             for x in hexin(arg):
                 send(make_out_header(x))
-                jread(32, 0.2)
+                jread(16, 0.2)
+                jread(64, 0.2)
     elif "send" in argv[1:] and len(argv) > 2:
         for arg in argv[2:]:
             for x in hexin(arg):
                 send(x)
-                jread(32, 0.2)
+                jread(16, 0.2)
+                jread(64, 0.2)
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
         asc = ('--noascii' not in argv[1:])
         while True:
@@ -326,8 +328,8 @@ def run(args):
                     send(make_out_header(word))
                 else:
                     send(word)
-                jread(32, 0.2)
-                jread(32, 0.2)
+                jread(16, 0.2)
+                jread(64, 0.2)
     else:
         ckeys=[x for x in load_commands().keys()]
         ckeys.sort()
