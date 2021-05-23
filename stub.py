@@ -141,7 +141,7 @@ def jsend(dat, asc=None):
     """just send. and print."""
     inhibitraw = False
     try:
-        if interpret:
+        if asc and interpret:
             inhibitraw = interpret(dat)
     except Exception as e:
         print(f"!  Error \"{e}\" doing (experimental) interpretation, just ignore.")
@@ -160,7 +160,7 @@ def jread(ll, delay=None, asc=None):
     out = REP.read(ll)
     while out:
         try:
-            if interpret:
+            if asc and interpret:
                 inhibitraw = interpret(out)
         except Exception as e:
             print(f"!  Error {e} doing (experimental) interpretation, just ignore.")
