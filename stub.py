@@ -24,22 +24,41 @@ try:
 except ImportError as err:
     print("Import error (%s): test mode only" % err, file=sys.stderr)
 try:
-    from interpret import interpret
+    from interpret import *
 except ImportError as err:
     print("Can't import interpretation module, that's OK", file=sys.stderr)
     interpret = None
 
 __usage__ = """\
-Usage: stub.py [--test] <command>
-Where <command> is one of:
+Usage: stub.py [--test] [--noascii] <command>
+
+ Where <command> is one of:
   asend 'XX XX XX' ['XX XX XX' [...]]
-   (sends arbitrary bytes, automatically prepending appropriate header)
+   (sends arbitrary bytes, automatically building appropriate header)
+
   send 'XX XX XX' ['XX XX XX' [...]]
-   (sends arbitrary bytes)
+   (sends arbitrary bytes, verbatim)
+
   read [bytes]
    (reads a maximum of [bytes] bytes, default 32)
-  poll [--noascii] [bytes] 
-   (reads once per second)
+
+  poll [bytes] 
+   (reads output once per second in [bytes] chunks)
+
+  expect 'XX XX XX' ['XX XX XX' [...]] <spec> 
+   Sends commands, restricting return output to those matching <spec> 
+   and returning (with status 0) AS SOON AS spec is matched; 1 otherwise.
+
+ And where options described above are:
+  --noascii   prevents the default 'TX' printout lines belwo
+       every line of raw hex output.
+       
+ And where <spec> looks like 'XX ?X X? ??', performing a string-initial search
+ where ? represents a 1-byte wildcard.
+
+ In all of the above,
+  'X' is any hex digit; '?' is a literal question mark.
+
 Or one of the named commands:
 %s
 """
@@ -93,10 +112,70 @@ def xprint(dat, pre="", asc=None):
         print("TX|%s"%" ".join([ "%2s"%chr(x) if (x > 31 and x < 127) else '..' for x in dat ]))
 
 
+def dtext(word):
+    """Silly ASCII printout helper"""
+    return "%1s"%chr(word) if (word >= 0x20 and word < 127) else '' if word == 0 else '?'
+
 def textin(instr):
     """converts a string into lists of ascii numbers"""
     return [ord(cc) if (ord(cc) >= 20 and ord(cc) < 127) else '?' for cc in instr]
 
+def split_bytes(word):
+    """
+    Split a word into its two bytes.
+    >>> split_bytes(0xf2)
+    (15, 2)
+    """
+    return divmod(word, 0x10)
+
+def match_bytes(dat, matchspec, rtnword=None):
+    """
+    Performs an initial-substring match on a byte string.
+    Returns True in case of match.
+    Match spec is usual two-byte groups, '?' for a wildcard byte, '??' for both bytes
+        otherwise digits specified as usual.  Empty string is not supported.
+    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? c? 70')
+    True
+    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? d? 70')
+    False
+    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? ?3 70')
+    True
+    >>> match_bytes([0x00,0x01,0x12], '0? 0? 1?')
+    True
+    >>> match_bytes([0x00,0x01,0x12], '??')
+    True
+    >>> match_bytes([0x00,0x01,0x12], '?? ?? 1? d? 70')
+    False
+    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0xfe,0x02,0x03], '?? ?? 1? ?3 70', 5)
+    254
+    """
+    matches = matchspec.split(' ')
+    lastmatch = len(matches)
+    if len(dat) < lastmatch:
+        return False
+
+    for i, bb in enumerate(dat):
+        if i >= lastmatch:
+            break
+        try:
+            if int(matches[i],16) == bb:
+                continue
+        except ValueError:
+            if matches[i] == '??':
+                continue
+            else:
+                (hi, lo) = split_bytes(bb)
+                (mhi, mlo) = matches[i]
+                if mhi == '?' and int(mlo,16) == lo:
+                    continue
+                elif mlo == '?' and int(mhi,16) == hi:
+                    continue
+        # fallthrough
+        return False
+    # we made it
+    if rtnword != None:
+        return dat[rtnword]
+    return True
 
 def make_chunk(msg, chunk_msg=None, string=[], limit=20, chunk_index=None):
     """
@@ -118,7 +197,7 @@ def make_chunk(msg, chunk_msg=None, string=[], limit=20, chunk_index=None):
         tail = chunk_msg + provisional[limit:]
         if chunk_index:
             chunk_msg[chunk_index] += 1
-        return [ head ] + chunk(tail,chunk_msg,limit=limit,chunk_index=chunk_index)
+        return [ head ] + make_chunk(tail,chunk_msg,limit=limit,chunk_index=chunk_index)
 
 def chunktest(msg, chunk_msg, string, limit=16, chunk_index=2):
     """
@@ -141,7 +220,7 @@ def jsend(dat, asc=None):
     """just send. and print."""
     inhibitraw = False
     try:
-        if asc and interpret:
+        if interpret:
             inhibitraw = interpret(dat)
     except Exception as e:
         print(f"!  Error \"{e}\" doing (experimental) interpretation, just ignore.")
@@ -152,30 +231,51 @@ def jsend(dat, asc=None):
         xprint(dat, ">> ", asc)
     EP.write(dat)
 
-def jread(ll, delay=None, asc=None):
+def jread(ll, delay=None, asc=None, silent=False):
     """just read <ll bytes>, optionally waiting <delay seconds> first."""
     inhibitraw = False
     if delay:
         time.sleep(delay)
+    #acc = []
     out = REP.read(ll)
     while out:
+        #acc += out
         try:
-            if asc and interpret:
+            if interpret:
                 inhibitraw = interpret(out)
         except Exception as e:
-            print(f"!  Error {e} doing (experimental) interpretation, just ignore.")
+            print(f"!  Error {e} doing (experimental) interpretation, just ignore.", file=sys.stderr)
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            print("!  "+traceback.format_tb(exc_traceback, limit=2)[1])
+            print("!  "+traceback.format_tb(exc_traceback, limit=2)[1], file=sys.stderr)
 
-        if not inhibitraw:
+        if not (silent or inhibitraw):
             xprint(out, " < ", asc)
         out = REP.read(ll)
-    sys.stdout.flush()
+    if not silent:
+        sys.stdout.flush()
+    #return acc
 
 def send(dat):
     """sends data and reads a max. of 40 bytes back."""
     jread(32)
     jsend(dat)
+
+def expect(dat, matchspec):
+    """
+    sends data, reads data back expecting a particular response
+    """
+    out = REP.read(32) # discard this
+    EP.write(dat)
+    time.sleep(0.5)
+    out = REP.read(32) # keep this
+    matched = False
+    while out:
+        if match_bytes(out, matchspec):
+            interpret(out)
+            matched = True
+        out = REP.read(32)
+    sys.stdout.flush()
+    return matched
 
 def make_out_header(dat):
     """
@@ -300,6 +400,12 @@ def run(args):
                 send(x)
                 jread(32, 0.2)
                 jread(32, 0.2)
+    elif 'expect' in argv[1:] and len(argv) > 3:
+        for arg in argv[2:-1]:
+            for x in hexin(arg):
+                if expect(make_out_header(x),argv[-1]):
+                    return False # equivalent of exit(0)
+        return True # equivalent of exit(1)
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
         asc = ('--noascii' not in argv[1:])
         while True:
@@ -337,4 +443,4 @@ def run(args):
 
 
 if __name__ == '__main__':
-    run(sys.argv[1:])
+    exit(run(sys.argv[1:]))
