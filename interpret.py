@@ -1,18 +1,19 @@
 #!/usr/bin/python3
+from stub import match_bytes, dtext
 
-def dtext(word):
-    """Silly ASCII printout helper"""
-    return "%1s"%chr(word) if (word >= 0x20 and word < 127) else '' if word == 0 else '?'
-
-def interpret(dat, prefix=" | "):
+def interpret(dat, prefix=" | ", matchspec=None):
     """
     More experiental work at understanding the returned messages.
-     
-    12:36:15  < 0d 00 18 ca 63 01 ff ff ff ff 0c 23 26 00
-    12:36:15 TX|.. .. .. ..  c .. .. .. .. .. ..  #  & ..
-    12:36:15  < 14 00 18 ca e2 01 20 20 20 20 20 20 20 20 00 31 32 00 33 35 ff
-    12:36:15 TX|.. .. .. .. .. ..                         ..  1  2 ..  3  5 ..
+
+    dat: bytes to interpret
+    prefix: prepend an ASCII prefix to printed output
+    match:  return only details matching the byte spec given
+              e.g. '?? ?? 1? c? 70'
+            if the data doesn't match, return quietly
     """
+    if matchspec and not match_bytes(dat, matchspec):
+        return False # inhibit hex
+
     pfprint = lambda x : print(prefix+x)
 
     #for msg in [o for o in dat if len(o)]:
@@ -261,8 +262,8 @@ def interpret(dat, prefix=" | "):
     elif typ == 0xe0 and addr[1] == 0xc8:
         text="".join([ dtext(x) for x in msg[5:15] ])
         #seq = "{:02x}".format(int(msg[15:]))
-        seq = msg[15:16]
-        pfprint("Display update: \"{}\" seq {}".format(text, seq))
+        seq = ", ".join([ f"{m:02x}" for m in msg[15:16] ])
+        pfprint(f"Display update: \"{text}\" seq {seq}")
         if len(msg[16:]):
             pfprint(" ".join("{:02x}".format(x) for x in msg[16:]))
         #pfprint("=[  end  ]=" + "="*60 + "\n")
@@ -291,26 +292,36 @@ def interpret(dat, prefix=" | "):
 #
 
     #elif typ[0] in (0x10, 0x12) and 
-    elif typ == 0xe0: # (and msg[3] != 0xc8):
-        seq = msg[15:16]
-
+    elif typ in (0xe0, 0xe2): # (and msg[3] != 0xc8):
+        page = msg[5]
         text = []
         sep = True
-        for byte in msg[5:]:
+        ix = 0
+        for ix, byte in enumerate(msg[5:]):
             if byte == 00:
                 sep = True
+            elif byte == 0x02:
+                text += ':'
+                sep = True
+            elif byte == 0xff:
+                break
             elif sep:
                 sep = False
                 text += dtext(byte)
             else:
                 text[-1] += dtext(byte)
 
-        pfprint("Display (time?) update ["+"|".join(text)+"] (typically Disc/Trk/MM/SS)")
+        alltext = "|".join(text)
+        pfprint(f"Display update {typ:02x}#{page:01}: [{alltext}]")
+        pfprint("   (Time updates Disk/Trk/MM/SS, Clock HH/MM)")
+        # print the remainder, if unexplained
         rest=""
-        for byte in msg[-2:]:
-            rest+= f"{byte:02x} ({byte:02}) "
-        pfprint(f"Mystery last bytes: {rest}")
-        return True # inhibit raw hex
+        for byte in msg[(5+ix):]:
+            if byte != 0xff:
+                rest+= f"{byte:02x} ({byte:02}) "
+        if rest:
+            pfprint(f"Mystery last bytes: {rest}")
+        #return True # inhibit raw hex
 
         # Before CD playback
         # < 17 00 10 98 e0 31 00 34 31 00 00 00 00 00 00 20 36 39 00 31 35 00 03 00
@@ -326,6 +337,16 @@ def interpret(dat, prefix=" | "):
         # From MD playback
         # < 14 00 12 b8 e0 31 00 34 00 00 00 00 31 00 00 00 30 30 00 a3 00
         #TX|.. .. .. .. ..  1 ..  4 .. .. .. ..  1 .. .. ..  0  0 .. .. ..
+
+        # Clock time ticker
+        #  < 14 00 18 ca e2 01 20 20 20 20 20 20 20 20 06 31 32 02 31 32 ff
+        # TX|.. .. .. .. .. ..                         ..  1  2 ..  1  2 ..
+        #  < 14 00 18 ca e2 01 20 20 20 20 20 20 20 20 00 31 32 00 33 35 ff
+        # TX|.. .. .. .. .. ..                         ..  1  2 ..  3  5 ..
+
+        # Another 18 ca update
+        #  < 0d 00 18 ca 63 01 ff ff ff ff 0c 23 26 00
+        # TX|.. .. .. ..  c .. .. .. .. .. ..  #  & ..
 
     elif len(msg[5:]):
         print(std)
