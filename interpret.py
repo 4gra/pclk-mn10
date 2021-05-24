@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from stub import match_bytes, dtext
+from stub import *
 
 def interpret(dat, prefix=" | ", matchspec=None):
     """
