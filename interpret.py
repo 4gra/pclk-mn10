@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 from stub import *
 
-def interpret(dat, prefix=" | ", matchspec=None):
+def interpret(msg, prefix=" | ", matchspec=None):
     """
     More experiental work at understanding the returned messages.
 
@@ -11,17 +11,18 @@ def interpret(dat, prefix=" | ", matchspec=None):
               e.g. '?? ?? 1? c? 70'
             if the data doesn't match, return quietly
     """
-    if matchspec and not match_bytes(dat, matchspec):
+    if matchspec and not match_bytes(msg, matchspec):
         return False # inhibit hex
 
     pfprint = lambda x : print(prefix+x)
 
-    #for msg in [o for o in dat if len(o)]:
-    msg = dat
     #print("\n=[ start ]=" + "="*60)
-    if len(msg) > 0 and len(msg) < 4:
+    if msg == [0x00, 0x60, 0x00]:
+        pfprint("GLOBAL POWER ON message")
+        return
+    elif len(msg) > 0 and len(msg) < 4:
         print()
-        pfprint("SHORT Message %s" % ' '.join(["{:02x}".format(s) for s in msg]))
+        pfprint("UNKNOWN SHORT Message %s" % ' '.join(["{:02x}".format(s) for s in msg]))
         return
 
     length=msg[0]
@@ -353,4 +354,8 @@ def interpret(dat, prefix=" | ", matchspec=None):
         pfprint("Not yet interpreted.")
         pfprint(" ".join("{:02x}".format(x) for x in msg[5:]))
 
-
+if __name__ == '__main__':
+    from sys import argv
+    for aa in argv[1:]:
+        for cmd in hexin(aa):
+            interpret(cmd, prefix="")
