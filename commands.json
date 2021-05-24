@@ -14,6 +14,9 @@
 "TAPE":      "c0 50 05 ff 00",
 "ampdevice": "c0 6a",
 
+"#": "ampinfo returns '[08 00 18] c8 70' info, see also b0 0f",
+"ampinfo":   "c0 0f",
+
 "ampunknown": "c0 6b",
 "getvol":    "c0 c7",
 
@@ -75,28 +78,28 @@
 
 "#":"for track titles, etc. continue incrementing $2 until zeroes are found",
 "#":"don't know the difference between 48 and e8.",
-"MDtracktitle__":"b0 48 00 00 $1 00 $2",
+"MDtracktitle__":   "b0 48 00 00 $1 00 $2",
 
 "#":"---- these seem to be some sort of forced remote control mode: using any of them locks the machine into the given command until reboot",
-"MD disable force rc": "b0 c0 00",
-"MD force rc play": "b0 c0 10",
-"MD force rc pause/play": "b0 c0 11",
-"MD force rc play/pause": "b0 c0 12",
-"MD force display mode":"b0 c0 1d",
-"MD force repeat mode": "b0 c0 20",
-"MD force rc stop": "b0 c0 13",
-"MD force rc eject": "b0 c0 40",
-"MD force record": "b0 c0 50",
+"MD disable force rc":      "b0 c0 00",
+"MD force rc play":         "b0 c0 10",
+"MD force rc pause/play":   "b0 c0 11",
+"MD force rc play/pause":   "b0 c0 12",
+"MD force display mode":    "b0 c0 1d",
+"MD force repeat mode":     "b0 c0 20",
+"MD force rc stop":         "b0 c0 13",
+"MD force rc eject":        "b0 c0 40",
+"MD force record":          "b0 c0 50",
 "MD hex sector(?) display": "b0 c0 ??",
 "MDNameIn": "b0 c0 6f",
 
-"tunerFM":   "c1 03 00",
-"tunerAM":  "c1 03 01",
-"tunerMono":  "c1 0a",
-"tunerStereo": "c1 0b",
-"tunehz+":  "c1 04",
-"tunehz-":  "c1 05",
-"tunepre+": "c1 08",
-"tunepre-": "c1 09"
+"tunerFM":      "c1 03 00",
+"tunerAM":      "c1 03 01",
+"tunerMono":    "c1 0a",
+"tunerStereo":  "c1 0b",
+"tunehz+":      "c1 04",
+"tunehz-":      "c1 05",
+"tunepre+":     "c1 08",
+"tunepre-":     "c1 09"
 
 }
