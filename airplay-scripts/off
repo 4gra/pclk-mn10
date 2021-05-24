@@ -4,10 +4,28 @@
 timeout=300
 flag="/tmp/.pclk.shutdown_requested"
 ctrl="$(dirname $0)/control"
+if [[ -z $1 ]]; then
+    SOURCE="TAPE"
+else
+    SOURCE=$1
+fi
 
 # TODO: if shutdown requested more than $timeout ago, shut down immediately.
 [[ -e $flag ]] && exit 0
 
 touch $flag
 sleep $timeout
-[[ -e $flag ]] && { $ctrl off >/dev/null && rm $flag; }
+
+# check if we are still on TAPE (05) before shutting down
+# see also OPTICAL (08)
+OK=0
+if [[ $SOURCE == "TAPE" ]]; then
+    EXPECT='?? 00 1? c? 70 05'
+elif [[ $SOURCE == "OPTICAL" ]]; then
+    EXPECT='?? 00 1? c? 70 08'
+else
+    OK=1
+fi
+$ctrl expect 'c0 0f' "$EXPECT" && OK=1
+
+[[ -e $flag && $OK -eq 1 ]] && { $ctrl off >/dev/null && rm $flag; }
