@@ -128,28 +128,34 @@ def split_bytes(word):
     """
     return divmod(word, 0x10)
 
-def match_bytes(dat, matchspec, rtnword=None):
+def match_bytes(dat, matchspec, full=False, rtnword=None):
     """
     Performs an initial-substring match on a byte string.
     Returns True in case of match.
     Match spec is usual two-byte groups, '?' for a wildcard byte, '??' for both bytes
         otherwise digits specified as usual.  Empty string is not supported.
-    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? c? 70')
+    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? c? 70', full=True)
     True
-    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? d? 70')
+    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? d? 70', full=True)
     False
-    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0x01,0x02,0x03], '?? ?? 1? ?3 70')
+    >>> match_bytes([0x01,0x00,0x12,0xc3,0x70,0x01,0x02,0x03], '1? ?3 70')
     True
-    >>> match_bytes([0x00,0x01,0x12], '0? 0? 1?')
+    >>> match_bytes([0x00,0x01,0x12], '0? 0? 1?', full=True)
     True
-    >>> match_bytes([0x00,0x01,0x12], '??')
-    True
-    >>> match_bytes([0x00,0x01,0x12], '?? ?? 1? d? 70')
+    >>> match_bytes([0x00,0x01,0x12], '??', full=False)
     False
-    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0xfe,0x02,0x03], '?? ?? 1? ?3 70', 5)
+    >>> match_bytes([0x00,0x01,0x12], '??', full=True)
+    True
+    >>> match_bytes([0x00,0x01,0x12], '1? d? 70', full=True)
+    False
+    >>> match_bytes([0x00,0x01,0x12,0xc3,0x70,0xfe,0x02,0x03], '?? ?? 1? ?3 70', full=True, rtnword=5)
+    254
+    >>> match_bytes([0x01,0x00,0x12,0xc3,0x70,0xfe,0x02,0x03], '1? ?3 70', rtnword=5)
     254
     """
     matches = matchspec.split(' ')
+    if not full:
+        matches = ['??', '00'] + matches
     lastmatch = len(matches)
     if len(dat) < lastmatch:
         return False
