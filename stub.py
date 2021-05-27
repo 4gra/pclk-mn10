@@ -79,7 +79,7 @@ class debug_pipe:
         self.afile = afile
 
     def write(self, data):
-        self.afile.write(">>(%s)\n" % " ".join(["%02x" % x for x in data]))
+        self.afile.write(">>(%s)\n" % " ".join([f"x:02x" for x in data]))
 
     def read(self, ll):
         self.afile.write(" < .. (read ≤%s bytes)\n" % ll)
