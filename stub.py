@@ -225,6 +225,7 @@ def hexin(instr):
 def jsend(dat, asc=None):
     """just send. and print."""
     inhibitraw = False
+    interpret(dat)
     try:
         if interpret:
             inhibitraw = interpret(dat)
@@ -246,6 +247,7 @@ def jread(ll, delay=None, asc=None, silent=False):
     out = REP.read(ll)
     while out:
         #acc += out
+        interpret(out)
         try:
             if interpret:
                 inhibitraw = interpret(out)
@@ -415,7 +417,7 @@ def run(args):
     elif argv[0][-2:] == 'poll' or "poll" in argv[1:]:
         asc = ('--noascii' not in argv[1:])
         while True:
-            jread(32, 0.1, asc)
+            jread(32, 0.5, asc)
     elif len(argv) > 1 and argv[1] in load_commands():
         rest = argv[1:]
         while len(rest) and rest[0] in load_commands():
