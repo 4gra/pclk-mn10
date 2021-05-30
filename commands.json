@@ -52,6 +52,11 @@
 "MDrec":     "b0 07",
 "MDnext":    "b0 08",
 "MDprev":    "b0 09",
+
+"#": "Locks the front panel, remote control only.",
+"MDRemoteLock": "b0 20",
+"MDRemoteUnlock": "b0 21",
+
 "#":"these enable 0x51 timing updates",
 "MDtimings": "b0 25",
 "MDnotimings": "b0 26",
