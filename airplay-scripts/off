@@ -20,12 +20,17 @@ sleep $timeout
 # see also OPTICAL (08)
 OK=0
 if [[ $SOURCE == "TAPE" ]]; then
-    EXPECT='?? 00 1? c? 70 05'
+    EXPECT='1? c? 70 05'
 elif [[ $SOURCE == "OPTICAL" ]]; then
-    EXPECT='?? 00 1? c? 70 08'
+    EXPECT='1? c? 70 08'
+elif [[ $SOURCE == "MD" ]]; then
+    EXPECT='1? c? 70 04'
+elif [[ $SOURCE == "CD" ]]; then
+    EXPECT='1? c? 70 02'
 else
     OK=1
 fi
 $ctrl expect 'c0 0f' "$EXPECT" && OK=1
+#OK=1
 
 [[ -e $flag && $OK -eq 1 ]] && { $ctrl off >/dev/null && rm $flag; }
