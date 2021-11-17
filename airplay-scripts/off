@@ -30,7 +30,10 @@ elif [[ $SOURCE == "CD" ]]; then
 else
     OK=1
 fi
-$ctrl expect 'c0 0f' "$EXPECT" && OK=1
-#OK=1
+if [[ $OK -eq 0 ]]; then
+    $ctrl expect 'c0 0f' "$EXPECT" && OK=1
+else
+    OK=1
+fi
 
 [[ -e $flag && $OK -eq 1 ]] && { $ctrl off >/dev/null && rm $flag; }
