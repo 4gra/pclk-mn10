@@ -1,4 +1,4 @@
-Were you to install `librespot` to a raspberry pi via `raspotify` you could launch it with defaults like:
+Were you to install `librespot` to a raspberry pi via [raspotify](https://github.com/dtcooper/raspotify) you could launch it with defaults like:
 
 ```
 OPTIONS="--emit-sink-events --onevent=/path/to/spot-scripts/librespot.sh"
