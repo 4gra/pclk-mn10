@@ -22,5 +22,6 @@ Additional requirements, if you want the software to actually do anything:
 What this will never control:
  - transfer of audio data (one way or the other) - these devices all handle MD contents as audio (be it analogue or digital).  
  - NetMD devices (they're entirely different and covered by the likes of https://wiki.physik.fu-berlin.de/linux-minidisc/doku.php / https://github.com/AlexanderS/linux-minidisc)
+ - Connection without a PCLK-MN10 - but that's OK... you can now build your own! https://github.com/Sir68k/pclink-i2c
 
 As this project is more of a journey of understanding than a product of any sort, please see the [wiki](https://github.com/4gra/pclk-mn10/wiki) for more details / work in progress.
