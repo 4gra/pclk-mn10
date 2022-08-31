@@ -17,7 +17,8 @@ conditions; view the included file LICENCE for details.
 
 Requires PyUSB, etc.
 """
-import sys, os, time, traceback
+import sys, os
+from time import sleep
 try:
     import usb.core
     import usb.util
@@ -229,6 +230,7 @@ def jsend(dat, asc=None):
         if interpret:
             inhibitraw = interpret(dat)
     except Exception as e:
+        import traceback
         print(f"!  Error \"{e}\" doing (experimental) interpretation, just ignore.")
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print("!  "+traceback.format_tb(exc_traceback, limit=2)[1])
@@ -241,7 +243,7 @@ def jread(ll, delay=None, asc=None, silent=False):
     """just read <ll bytes>, optionally waiting <delay seconds> first."""
     inhibitraw = False
     if delay:
-        time.sleep(delay)
+        sleep(delay)
     #acc = []
     out = REP.read(ll)
     while out:
@@ -250,6 +252,7 @@ def jread(ll, delay=None, asc=None, silent=False):
             if interpret:
                 inhibitraw = interpret(out)
         except Exception as e:
+            import traceback
             print(f"!  Error {e} doing (experimental) interpretation, just ignore.", file=sys.stderr)
             exc_type, exc_value, exc_traceback = sys.exc_info()
             print("!  "+traceback.format_tb(exc_traceback, limit=2)[1], file=sys.stderr)
@@ -272,7 +275,7 @@ def expect(dat, matchspec):
     """
     out = REP.read(32) # discard this
     EP.write(dat)
-    time.sleep(0.5)
+    sleep(0.5)
     out = REP.read(32) # keep this
     matched = False
     while out:
@@ -387,6 +390,12 @@ def run(args):
         jread(32)
         jsend([0x05,0x00,0x60,0xc0,0xc8]+[level])
         jread(32)
+    # these two are here because they are very common and save us from loading
+    # the command list, which saves a bit of time in embedded situations.
+    elif len(argv) == 2 and argv[1] == 'on':
+        jsend([0x00,0x60,0x00])
+    elif len(argv) == 2 and argv[1] == 'off':
+        send(make_out_header([0xc0,0x2f]))
     elif "read" in argv[1:]:
         try:
             ll=int(argv[2])
