@@ -25,6 +25,6 @@ What this will never control:
  - Connection without a PCLK-MN10 - but that's OK... you can now build your own! https://github.com/Sir68k/pclink-i2c
 
 What it's possible this could do in future, but probably won't unless I find some in a junk sale:
- - use of hardware like the [PCLK-PX1/PX2/PX3] (https://www.minidisc.wiki/accessories/pclink/pclk-px1) in place of the MN10, and with some older pre-PCLK-MN10 hardware - but this would require testing with hardware I don't have!
+ - use of hardware like the [PCLK-PX1/PX2/PX3](https://www.minidisc.wiki/accessories/pclink/pclk-px1) in place of the MN10, and with some older pre-PCLK-MN10 hardware - but this would require testing with hardware I don't have!
 
 As this project is more of a journey of understanding than a product of any sort, please see the [wiki](https://github.com/4gra/pclk-mn10/wiki) for more details / work in progress.
