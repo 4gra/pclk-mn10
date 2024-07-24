@@ -17,7 +17,7 @@ Requirements:
    * Windows WFM with the magic of Zadig / libusbK: https://zadig.akeo.ie/
 
 Additional requirements, if you want the software to actually do anything:
- - A PCLK-MN10, PCLK-MN10a or PCLK-MN20.  Possibly also known as a CAV-MN10.
+ - A PCLK-MN10, PCLK-MN10a or PCLK-MN20.  Possibly also known as a CAV-MN10 (and if you have a spare, please let me know!)
  - A Sony hifi / MiniDisc / audio device compatible with the above such as the DHC-MD595 (also possibly MDS-PC3, or one of a handful of circa 2001 MD-only decks)
  - or, for the very brave, utterly untested (by me)... any Sony hi-fi device with Control-I functionality, since it would appear that the PC-LINK port is essentially a Control-I port with power control!
 
