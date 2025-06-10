@@ -1,0 +1,4 @@
+# Give members of 'audio' access to the PCLK-MN10 USB control interface.
+# Put into /etc/udev/rules.d/99-pclk-mn10.rules and replug, or
+# udevadm cotrol --reload && udevadm trigger
+SUBSYSTEMS=="usb", ATTR{idVendor}=="054c", ATTR{idProduct}=="0034", MODE="0660", GROUP="audio"
